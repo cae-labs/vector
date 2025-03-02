@@ -134,7 +134,7 @@ function App() {
 							/>
 						</>
 					) : (
-						<Trash onClose={() => setShowTrash(false)} />
+						<Trash />
 					)}
 				</div>
 			</div>

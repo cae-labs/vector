@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { FileEntry } from '@/types/file';
 
-interface TrashProps {
-	onClose: () => void;
-}
-
-export function Trash({ onClose }: TrashProps) {
+export function Trash() {
 	const [items, setItems] = useState<FileEntry[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -57,9 +53,6 @@ export function Trash({ onClose }: TrashProps) {
 		<div className="flex-1 flex flex-col">
 			<div className="flex items-center justify-between p-4 border-b">
 				<h1 className="text-xl font-semibold">Trash</h1>
-				<button onClick={onClose} className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200">
-					Close
-				</button>
 			</div>
 
 			<div className="flex-1 overflow-y-auto p-4">
