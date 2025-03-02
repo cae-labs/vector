@@ -21,6 +21,7 @@ export function useFileSystem() {
 	const [showHidden, setShowHidden] = useState<boolean>(false);
 	const [isOutsideHomeDir, setIsOutsideHomeDir] = useState<boolean>(false);
 	const [canPaste, setCanPaste] = useState<boolean>(false);
+	const [newlyCreatedPath, setNewlyCreatedPath] = useState<string | null>(null);
 
 	const historyRef = useRef<string[]>([]);
 	const historyIndexRef = useRef<number>(-1);
@@ -137,6 +138,8 @@ export function useFileSystem() {
 		async (name: string) => {
 			try {
 				await invoke('create_directory', { path: currentPath, name });
+				const newPath = `${currentPath}/${name}`;
+				setNewlyCreatedPath(newPath);
 				loadDirectory(currentPath);
 			} catch (err) {
 				setError(err as string);
@@ -149,6 +152,8 @@ export function useFileSystem() {
 		async (name: string) => {
 			try {
 				await invoke('create_file', { path: currentPath, name });
+				const newPath = `${currentPath}/${name}`;
+				setNewlyCreatedPath(newPath);
 				loadDirectory(currentPath);
 			} catch (err) {
 				setError(err as string);
@@ -228,6 +233,7 @@ export function useFileSystem() {
 				setCanPaste(false);
 			}
 
+			setNewlyCreatedPath(destinationPath);
 			loadDirectory(currentPath);
 		} catch (err) {
 			setError(err as string);
@@ -258,6 +264,8 @@ export function useFileSystem() {
 		canGoForward,
 		isOutsideHomeDir,
 		initDirectory,
-		loadDirectory
+		loadDirectory,
+		newlyCreatedPath,
+		clearNewlyCreatedPath: () => setNewlyCreatedPath(null)
 	};
 }

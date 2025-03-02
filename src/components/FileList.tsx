@@ -1,4 +1,4 @@
-import { useState, useEffect, MouseEvent } from 'react';
+import { useState, useEffect, useRef, MouseEvent } from 'react';
 import { ContextMenuLocation } from '@/types';
 
 import { FileItem } from '@/components/FileItem';
@@ -23,6 +23,8 @@ interface FileListProps {
 	onToggleHidden: () => void;
 	restoreFromTrash?: (path: string) => void;
 	permanentlyDelete?: (path: string) => void;
+	newlyCreatedPath?: string | null;
+	clearNewlyCreatedPath?: () => void;
 }
 
 export function FileList({
@@ -41,7 +43,9 @@ export function FileList({
 	showHidden,
 	onToggleHidden,
 	restoreFromTrash,
-	permanentlyDelete
+	permanentlyDelete,
+	newlyCreatedPath,
+	clearNewlyCreatedPath
 }: FileListProps) {
 	const [contextMenu, setContextMenu] = useState<{
 		visible: boolean;
@@ -56,6 +60,9 @@ export function FileList({
 		file: null,
 		location: ContextMenuLocation.EMPTY_SPACE
 	});
+
+	const fileListContainerRef = useRef<HTMLDivElement>(null);
+	const fileItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
 	const [renamingFile, setRenamingFile] = useState<string | null>(null);
 	const [newFileName, setNewFileName] = useState<string>('');
@@ -143,6 +150,33 @@ export function FileList({
 	};
 
 	useEffect(() => {
+		if (newlyCreatedPath && files.length > 0) {
+			const fileToSelect = files.find((file) => file.path === newlyCreatedPath);
+			if (fileToSelect) {
+				setSelectedItem(fileToSelect.path);
+
+				setTimeout(() => {
+					const fileElement = fileItemRefs.current.get(fileToSelect.path);
+					const container = fileListContainerRef.current;
+
+					if (fileElement && container) {
+						const elementRect = fileElement.getBoundingClientRect();
+						const containerRect = container.getBoundingClientRect();
+
+						const offset = elementRect.top + container.scrollTop - containerRect.top - (containerRect.height - elementRect.height) / 2;
+
+						container.scrollTop = offset;
+					}
+				}, 50);
+
+				if (clearNewlyCreatedPath) {
+					clearNewlyCreatedPath();
+				}
+			}
+		}
+	}, [files, newlyCreatedPath, clearNewlyCreatedPath]);
+
+	useEffect(() => {
 		if (contextMenu.visible) {
 			document.body.style.overflow = 'hidden';
 		} else {
@@ -162,6 +196,7 @@ export function FileList({
 				<div className="w-20 text-right">Size</div>
 			</div>
 			<div
+				ref={fileListContainerRef}
 				className="flex-1 overflow-auto relative"
 				onContextMenu={handleBackgroundContextMenu}
 				onClick={(e) => {
@@ -199,21 +234,28 @@ export function FileList({
 					<div className="flex justify-center items-center h-40 text-gray-500">This folder is empty</div>
 				) : (
 					files.map((file) => (
-						<FileItem
+						<div
 							key={file.path}
-							file={file}
-							onOpen={handleOpenItem}
-							onSelect={handleSelectItem}
-							onDelete={onDeleteFile}
-							onRename={startRenaming}
-							onContextMenu={handleFileContextMenu}
-							isRenaming={renamingFile === file.path}
-							isSelected={selectedItem === file.path}
-							newName={newFileName}
-							setNewName={setNewFileName}
-							onSaveRename={saveRename}
-							onCancelRename={cancelRename}
-						/>
+							ref={(el) => {
+								if (el) fileItemRefs.current.set(file.path, el);
+								else fileItemRefs.current.delete(file.path);
+							}}>
+							<FileItem
+								key={file.path}
+								file={file}
+								onOpen={handleOpenItem}
+								onSelect={handleSelectItem}
+								onDelete={onDeleteFile}
+								onRename={startRenaming}
+								onContextMenu={handleFileContextMenu}
+								isRenaming={renamingFile === file.path}
+								isSelected={selectedItem === file.path}
+								newName={newFileName}
+								setNewName={setNewFileName}
+								onSaveRename={saveRename}
+								onCancelRename={cancelRename}
+							/>
+						</div>
 					))
 				)}
 

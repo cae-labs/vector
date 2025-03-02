@@ -35,7 +35,9 @@ function App() {
 		canGoForward,
 		isOutsideHomeDir,
 		initDirectory,
-		loadDirectory
+		loadDirectory,
+		newlyCreatedPath,
+		clearNewlyCreatedPath
 	} = useFileSystem();
 
 	const [isMacOS, setIsMacOS] = useState(false);
@@ -136,6 +138,8 @@ function App() {
 								isLoading={isLoading}
 								showHidden={showHidden}
 								onToggleHidden={toggleHiddenFiles}
+								newlyCreatedPath={newlyCreatedPath}
+								clearNewlyCreatedPath={clearNewlyCreatedPath}
 							/>
 						</>
 					) : (

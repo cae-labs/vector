@@ -1,2 +1,1 @@
 jump to select file or folder on creation, do the same thing with pasting as well
-fix show hidden files resets to home dir
