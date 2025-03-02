@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, MouseEvent } from 'react';
 import { ContextMenuLocation } from '@/types';
 import { platform } from '@tauri-apps/plugin-os';
 import { load } from '@tauri-apps/plugin-store';
+import { invoke } from '@tauri-apps/api/core';
 
 import { FileItem } from '@/components/FileItem';
 import { ContextMenu } from '@/components/ContextMenu';
@@ -91,7 +92,7 @@ export function FileList({
 	const [renamingFile, setRenamingFile] = useState<string | null>(null);
 	const [newFileName, setNewFileName] = useState<string>('');
 
-	const [selectedFile, setSelectedFile] = useState<string | null>(null);
+	const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
 	const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
 	const [creatingItem, setCreatingItem] = useState<{
@@ -102,6 +103,10 @@ export function FileList({
 	const [sortOption, setSortOption] = useState<SortOption>(SortOption.NAME_ASC);
 	const [storeInstance, setStoreInstance] = useState<any>(null);
 
+	const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+	const [expandedContents, setExpandedContents] = useState<Record<string, FileEntry[]>>({});
+	const [isLoadingExpanded, setIsLoadingExpanded] = useState<Record<string, boolean>>({});
+
 	useEffect(() => {
 		const initStore = async () => {
 			try {
@@ -111,6 +116,11 @@ export function FileList({
 				const savedZoom = await store.get('zoom-level');
 				if (savedZoom) {
 					setZoomLevel(savedZoom);
+				}
+
+				const savedExpandedFolders = await store.get('expanded-folders');
+				if (savedExpandedFolders) {
+					setExpandedFolders(savedExpandedFolders);
 				}
 			} catch (error) {
 				console.error('Failed to initialize store:', error);
@@ -134,6 +144,21 @@ export function FileList({
 
 		saveZoomLevel();
 	}, [zoomLevel, storeInstance]);
+
+	useEffect(() => {
+		if (!storeInstance) return;
+
+		const saveExpandedFolders = async () => {
+			try {
+				await storeInstance.set('expanded-folders', expandedFolders);
+				await storeInstance.save();
+			} catch (error) {
+				console.error('Failed to save expanded folders:', error);
+			}
+		};
+
+		saveExpandedFolders();
+	}, [expandedFolders, storeInstance]);
 
 	useEffect(() => {
 		if (!storeInstance || !currentPath) return;
@@ -175,6 +200,65 @@ export function FileList({
 		savePreference();
 	}, [sortOption, currentPath, storeInstance]);
 
+	useEffect(() => {
+		const loadExpandedFolderContents = async () => {
+			for (const [folderPath, isExpanded] of Object.entries(expandedFolders)) {
+				if (isExpanded && !expandedContents[folderPath] && !isLoadingExpanded[folderPath]) {
+					try {
+						setIsLoadingExpanded((prev) => ({ ...prev, [folderPath]: true }));
+
+						const entries = await invoke<FileEntry[]>('read_directory', {
+							path: folderPath,
+							showHidden
+						});
+
+						setExpandedContents((prev) => ({
+							...prev,
+							[folderPath]: entries
+						}));
+					} catch (error) {
+						console.error(`Failed to load contents for ${folderPath}:`, error);
+					} finally {
+						setIsLoadingExpanded((prev) => ({ ...prev, [folderPath]: false }));
+					}
+				}
+			}
+		};
+
+		loadExpandedFolderContents();
+	}, [expandedFolders, showHidden]);
+
+	useEffect(() => {
+		setExpandedContents({});
+	}, [showHidden]);
+
+	useEffect(() => {
+		const refreshExpandedContents = async () => {
+			const refreshedContents: Record<string, FileEntry[]> = {};
+
+			for (const [folderPath, isExpanded] of Object.entries(expandedFolders)) {
+				if (isExpanded) {
+					try {
+						const entries = await invoke<FileEntry[]>('read_directory', {
+							path: folderPath,
+							showHidden
+						});
+
+						refreshedContents[folderPath] = entries;
+					} catch (error) {
+						console.error(`Failed to refresh contents for ${folderPath}:`, error);
+					}
+				}
+			}
+
+			setExpandedContents(refreshedContents);
+		};
+
+		if (Object.keys(expandedFolders).some((path) => expandedFolders[path])) {
+			refreshExpandedContents();
+		}
+	}, [files, showHidden]);
+
 	const getSortedFiles = () => {
 		return [...files].sort((a, b) => {
 			switch (sortOption) {
@@ -190,6 +274,44 @@ export function FileList({
 
 				case SortOption.DATE_ASC:
 					return new Date(a.modified).getTime() - new Date(b.modified).getTime();
+
+				case SortOption.DATE_DESC:
+					return new Date(b.modified).getTime() - new Date(a.modified).getTime();
+
+				case SortOption.SIZE_ASC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return a.size - b.size;
+
+				case SortOption.SIZE_DESC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return b.size - a.size;
+
+				default:
+					return 0;
+			}
+		});
+	};
+
+	const getSortedExpandedContents = (contents: FileEntry[]) => {
+		return [...contents].sort((a, b) => {
+			switch (sortOption) {
+				case SortOption.NAME_ASC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return a.name.localeCompare(b.name);
+
+				case SortOption.NAME_DESC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return b.name.localeCompare(a.name);
+
+				case SortOption.DATE_ASC:
+					return new Date(a.modified).getTime() - new Date(b.modified).getTime();
+
+				case SortOption.DATE_DESC:
+					return new Date(b.modified).getTime() - new Date(a.modified).getTime();
 
 				case SortOption.DATE_DESC:
 					return new Date(b.modified).getTime() - new Date(a.modified).getTime();
@@ -249,6 +371,7 @@ export function FileList({
 		event.preventDefault();
 		event.stopPropagation();
 		setSelectedItem(file.path);
+		setSelectedFile(file);
 		setContextMenu({
 			visible: true,
 			x: event.clientX,
@@ -318,6 +441,37 @@ export function FileList({
 		setSelectedItem(file.path);
 	};
 
+	const handleToggleExpand = async (file: FileEntry) => {
+		if (!file.is_dir) return;
+
+		const isCurrentlyExpanded = !!expandedFolders[file.path];
+
+		setExpandedFolders((prev) => ({
+			...prev,
+			[file.path]: !isCurrentlyExpanded
+		}));
+
+		if (!isCurrentlyExpanded && !expandedContents[file.path] && !isLoadingExpanded[file.path]) {
+			try {
+				setIsLoadingExpanded((prev) => ({ ...prev, [file.path]: true }));
+
+				const entries = await invoke<FileEntry[]>('read_directory', {
+					path: file.path,
+					showHidden
+				});
+
+				setExpandedContents((prev) => ({
+					...prev,
+					[file.path]: entries
+				}));
+			} catch (error) {
+				console.error(`Failed to load contents for ${file.path}:`, error);
+			} finally {
+				setIsLoadingExpanded((prev) => ({ ...prev, [file.path]: false }));
+			}
+		}
+	};
+
 	useEffect(() => {
 		setIsMacOS(platform() === 'macos');
 	}, []);
@@ -336,10 +490,24 @@ export function FileList({
 				setSelectedItem(null);
 			}
 
-			if (selectedItem) {
+			if (selectedItem && selectedFile) {
 				if ((isMacOS && cmdOrCtrl && event.key === 'Backspace') || (!isMacOS && event.key === 'Delete')) {
 					event.preventDefault();
 					onDeleteFile(selectedItem);
+				}
+
+				if (event.key === 'ArrowRight' && selectedFile.is_dir) {
+					if (!expandedFolders[selectedItem]) {
+						event.preventDefault();
+						handleToggleExpand(selectedFile);
+					}
+				}
+
+				if (event.key === 'ArrowLeft' && selectedFile.is_dir) {
+					if (expandedFolders[selectedItem]) {
+						event.preventDefault();
+						handleToggleExpand(selectedFile);
+					}
 				}
 			}
 
@@ -349,7 +517,7 @@ export function FileList({
 						if (selectedFile) {
 							if (event.shiftKey) {
 								event.preventDefault();
-								onOpenFile(selectedFile, true);
+								onOpenFile(selectedFile);
 							} else {
 								event.preventDefault();
 								onOpenFile(selectedFile);
@@ -360,16 +528,14 @@ export function FileList({
 					case 'c':
 						if (selectedItem) {
 							event.preventDefault();
-							const selectedFile = files.find((file) => file.path === selectedItem);
-							if (selectedFile) onCopyFile(selectedFile.path);
+							onCopyFile(selectedItem);
 						}
 						break;
 
 					case 'x':
 						if (selectedItem) {
 							event.preventDefault();
-							const selectedFile = files.find((file) => file.path === selectedItem);
-							if (selectedFile) onCutFile(selectedFile.path);
+							onCutFile(selectedItem);
 						}
 						break;
 
@@ -423,13 +589,14 @@ export function FileList({
 
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [selectedItem, files, canPaste, isMacOS]);
+	}, [selectedItem, selectedFile, files, canPaste, isMacOS, expandedFolders]);
 
 	useEffect(() => {
 		if (newlyCreatedPath && files.length > 0) {
 			const fileToSelect = files.find((file) => file.path === newlyCreatedPath);
 			if (fileToSelect) {
 				setSelectedItem(fileToSelect.path);
+				setSelectedFile(fileToSelect);
 
 				setTimeout(() => {
 					const fileElement = fileItemRefs.current.get(fileToSelect.path);
@@ -465,16 +632,73 @@ export function FileList({
 
 	const sortedFiles = getSortedFiles();
 
-	const zoomStyles = {
-		fontSize: `${zoomLevel}rem`,
-		transition: 'font-size 0.2s ease'
+	const renderFiles = () => {
+		if (sortedFiles.length === 0 && !creatingItem.type) {
+			return <div className="flex justify-center items-center h-40 text-stone-500 dark:text-stone-400">This folder is empty</div>;
+		}
+
+		const result: JSX.Element[] = [];
+
+		const renderFileWithChildren = (file: FileEntry, depth: number = 0) => {
+			const isExpanded = file.is_dir && expandedFolders[file.path];
+			const isExpandable = file.is_dir && !(isMacOS && file.name.endsWith('.app'));
+
+			const fileElement = (
+				<div
+					key={file.path}
+					ref={(el) => {
+						if (el) fileItemRefs.current.set(file.path, el);
+						else fileItemRefs.current.delete(file.path);
+					}}>
+					<FileItem
+						file={file}
+						onOpen={onOpenFile}
+						onSelect={handleSelectItem}
+						onDelete={onDeleteFile}
+						onRename={startRenaming}
+						onContextMenu={handleFileContextMenu}
+						isRenaming={renamingFile === file.path}
+						isSelected={selectedItem === file.path}
+						newName={newFileName}
+						setNewName={setNewFileName}
+						onSaveRename={saveRename}
+						onCancelRename={cancelRename}
+						zoomLevel={zoomLevel}
+						iconSize={getScaledIconSize(16)}
+						isExpanded={isExpanded}
+						onToggleExpand={handleToggleExpand}
+						depth={depth}
+						isExpandable={isExpandable}
+					/>
+				</div>
+			);
+
+			result.push(fileElement);
+
+			if (isExpanded) {
+				const children = expandedContents[file.path];
+
+				if (children && children.length > 0) {
+					const sortedChildren = getSortedExpandedContents(children);
+					sortedChildren.forEach((child) => {
+						renderFileWithChildren(child, depth + 1);
+					});
+				}
+			}
+		};
+
+		sortedFiles.forEach((file) => {
+			renderFileWithChildren(file);
+		});
+
+		return result;
 	};
 
 	const getScaledIconSize = (baseSize: number) => Math.round(baseSize * zoomLevel);
 
 	return (
 		<div className="h-screen flex flex-col">
-			<div className="sticky top-0 flex p-0.5 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b-[1px] border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
+			<div className="sticky top-0 flex p-1 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b-[1px] border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
 				<div className="w-11"></div>
 				<div className="flex-1 py-1" onClick={() => toggleSort('name')}>
 					Name{getSortIndicator('name')}
@@ -493,18 +717,19 @@ export function FileList({
 				onClick={(e) => {
 					if (e.target === e.currentTarget) {
 						setSelectedItem(null);
+						setSelectedFile(null);
 					}
 				}}
 				style={{ overflowY: contextMenu.visible ? 'hidden' : 'auto' }}>
 				{creatingItem.type && (
-					<div className="flex items-center p-2 border-b border-stone-300 bg-blue-50">
+					<div className="flex items-center p-2 border-b border-stone-300 dark:border-stone-700 bg-blue-50 dark:bg-blue-900/20">
 						<div className="mr-2 text-xl">{creatingItem.type === 'file' ? '📄' : '📁'}</div>
 						<div className="flex flex-1 items-center">
 							<input
 								type="text"
 								value={creatingItem.name}
 								onChange={(e) => setCreatingItem({ ...creatingItem, name: e.target.value })}
-								className="flex-1 p-1 border rounded"
+								className="flex-1 p-1 border rounded dark:bg-stone-800 dark:border-stone-600 dark:text-stone-200"
 								autoFocus
 								onKeyDown={(e) => {
 									if (e.key === 'Enter') saveNewItem();
@@ -515,36 +740,7 @@ export function FileList({
 					</div>
 				)}
 
-				{sortedFiles.length === 0 && !creatingItem.type ? (
-					<div className="flex justify-center items-center h-40 text-stone-500">This folder is empty</div>
-				) : (
-					sortedFiles.map((file) => (
-						<div
-							key={file.path}
-							ref={(el) => {
-								if (el) fileItemRefs.current.set(file.path, el);
-								else fileItemRefs.current.delete(file.path);
-							}}>
-							<FileItem
-								key={file.path}
-								file={file}
-								onOpen={onOpenFile}
-								onSelect={handleSelectItem}
-								onDelete={onDeleteFile}
-								onRename={startRenaming}
-								onContextMenu={handleFileContextMenu}
-								isRenaming={renamingFile === file.path}
-								isSelected={selectedItem === file.path}
-								newName={newFileName}
-								setNewName={setNewFileName}
-								onSaveRename={saveRename}
-								onCancelRename={cancelRename}
-								zoomLevel={zoomLevel}
-								iconSize={getScaledIconSize(16)}
-							/>
-						</div>
-					))
-				)}
+				{renderFiles()}
 
 				{contextMenu.visible && (
 					<ContextMenu

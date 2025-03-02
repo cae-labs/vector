@@ -49,6 +49,7 @@ interface FileItemProps {
 	isExpanded?: boolean;
 	onToggleExpand?: (file: FileEntry) => void;
 	depth?: number;
+	isExpandable?: boolean;
 }
 
 export function FileItem({
@@ -68,7 +69,8 @@ export function FileItem({
 	iconSize = 18,
 	isExpanded = false,
 	onToggleExpand,
-	depth = 0
+	depth = 0,
+	isExpandable = true
 }: FileItemProps) {
 	const [isMacOS, setIsMacOS] = useState(false);
 	const [relativeTime, setRelativeTime] = useState('');
@@ -79,7 +81,7 @@ export function FileItem({
 	const scaledIconSize = Math.round(iconSize * zoomLevel);
 	const paddingY = Math.max(2.5, Math.round(2.5 * zoomLevel));
 	const fontSize = `${Math.max(0.75, 0.75 * zoomLevel)}rem`;
-	const indentSize = 15;
+	const indentSize = 16;
 
 	useEffect(() => {
 		setIsMacOS(platform() === 'macos');
@@ -148,7 +150,7 @@ export function FileItem({
 
 	const handleExpandToggle = (e: MouseEvent) => {
 		e.stopPropagation();
-		if (onToggleExpand && file.is_dir) {
+		if (onToggleExpand && file.is_dir && isExpandable) {
 			onToggleExpand(file);
 		}
 	};
@@ -250,17 +252,20 @@ export function FileItem({
 			onMouseLeave={() => setIsHovering(false)}
 			style={{
 				padding: `${paddingY}px 1.25rem`,
-				paddingLeft: `${depth * indentSize + 10}px`
+				paddingLeft: `${depth * indentSize + 8}px`
 			}}>
-			{file.is_dir && !file.name.endsWith('.app') && (
+			{file.is_dir && isExpandable && (
 				<div
-					className={`flex items-center justify-center w-4 h-4 mr-1 ${isMacOS || isHovering ? 'opacity-100' : 'opacity-0'}`}
-					onClick={handleExpandToggle}
-					style={{ transition: 'opacity 0.15s ease' }}>
-					{isExpanded ? <ChevronDown size={14} className="text-stone-500" /> : <ChevronRight size={14} className="text-stone-500" />}
+					className={`flex items-center justify-center w-4 h-4 mr-1 ${isMacOS || isHovering ? 'opacity-100' : 'opacity-0'} transition-opacity duration-150 ease-in-out`}
+					onClick={handleExpandToggle}>
+					{isExpanded ? (
+						<ChevronDown size={14} className={`text-stone-500 ${isSelected ? 'text-white' : 'dark:text-stone-400'}`} />
+					) : (
+						<ChevronRight size={14} className={`text-stone-500 ${isSelected ? 'text-white' : 'dark:text-stone-400'}`} />
+					)}
 				</div>
 			)}
-			{(!file.is_dir || file.name.endsWith('.app')) && <div className="w-4 mr-1"></div>}
+			{(!file.is_dir || !isExpandable) && <div className="w-4 mr-1"></div>}
 
 			<div style={{ marginRight: `${marginRight}rem` }}>
 				<FileIcon />
@@ -272,7 +277,7 @@ export function FileItem({
 						type="text"
 						value={newName}
 						onChange={(e) => setNewName(e.target.value)}
-						className="flex-1 p-1 border border-stone-300 rounded"
+						className="flex-1 p-1 border border-stone-300 rounded dark:bg-stone-800 dark:border-stone-600 dark:text-stone-200"
 						style={{ fontSize }}
 						autoFocus
 						onKeyDown={(e) => {
