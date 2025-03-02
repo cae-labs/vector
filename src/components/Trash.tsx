@@ -27,7 +27,6 @@ export function Trash({ onClose }: TrashProps) {
 	const handleRestore = async (path: string) => {
 		try {
 			await invoke('restore_from_trash', { path });
-			// Refresh the list after restoring
 			await loadTrashItems();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to restore item');

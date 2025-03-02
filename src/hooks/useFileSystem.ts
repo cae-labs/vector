@@ -11,7 +11,7 @@ export interface FileEntry {
 	is_hidden: boolean;
 }
 
-type ClipboardOperation = 'copy' | 'cut';
+type ClipboardOperation = 'Copy' | 'Cut';
 
 export function useFileSystem() {
 	const [currentPath, setCurrentPath] = useState<string>('');
@@ -195,14 +195,14 @@ export function useFileSystem() {
 
 	const copyItem = useCallback(
 		(path: string) => {
-			copyToClipboard(path, 'copy');
+			copyToClipboard(path, 'Copy');
 		},
 		[copyToClipboard]
 	);
 
 	const cutItem = useCallback(
 		(path: string) => {
-			copyToClipboard(path, 'cut');
+			copyToClipboard(path, 'Cut');
 		},
 		[copyToClipboard]
 	);
