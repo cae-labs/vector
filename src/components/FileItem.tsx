@@ -50,6 +50,7 @@ interface FileItemProps {
 	onToggleExpand?: (file: FileEntry) => void;
 	depth?: number;
 	isExpandable?: boolean;
+	isAlternate?: boolean;
 }
 
 export function FileItem({
@@ -70,7 +71,8 @@ export function FileItem({
 	isExpanded = false,
 	onToggleExpand,
 	depth = 0,
-	isExpandable = true
+	isExpandable = true,
+	isAlternate = false
 }: FileItemProps) {
 	const [isMacOS, setIsMacOS] = useState(false);
 	const [relativeTime, setRelativeTime] = useState('');
@@ -244,7 +246,9 @@ export function FileItem({
 
 	return (
 		<div
-			className={`cursor-default flex items-center border-b border-stone-300 dark:border-stone-700/50 ${isSelected ? 'bg-blue-100 dark:bg-[#0070FF]' : ''}`}
+			className={`cursor-default flex items-center border-b border-stone-300 dark:border-stone-700/50 ${
+				isSelected ? 'bg-blue-100 dark:bg-[#0070FF]' : isAlternate ? 'bg-stone-50 dark:bg-stone-800/50' : ''
+			}`}
 			onContextMenu={(e) => onContextMenu(e, file)}
 			onClick={() => onSelect(file)}
 			onMouseEnter={() => setIsHovering(true)}

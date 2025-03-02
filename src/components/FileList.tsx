@@ -633,6 +633,8 @@ export function FileList({
 	const sortedFiles = getSortedFiles();
 
 	const renderFiles = () => {
+		let rowIndex = 0;
+
 		if (sortedFiles.length === 0 && !creatingItem.type) {
 			return <div className="flex justify-center items-center h-40 text-stone-500 dark:text-stone-400">This folder is empty</div>;
 		}
@@ -642,6 +644,7 @@ export function FileList({
 		const renderFileWithChildren = (file: FileEntry, depth: number = 0) => {
 			const isExpanded = file.is_dir && expandedFolders[file.path];
 			const isExpandable = file.is_dir && !(isMacOS && file.name.endsWith('.app'));
+			const isAlternate = rowIndex % 2 === 1;
 
 			const fileElement = (
 				<div
@@ -669,11 +672,13 @@ export function FileList({
 						onToggleExpand={handleToggleExpand}
 						depth={depth}
 						isExpandable={isExpandable}
+						isAlternate={isAlternate}
 					/>
 				</div>
 			);
 
 			result.push(fileElement);
+			rowIndex++;
 
 			if (isExpanded) {
 				const children = expandedContents[file.path];
