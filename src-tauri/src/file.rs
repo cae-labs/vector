@@ -307,15 +307,10 @@ pub async fn get_trash_items() -> Result<Vec<FileEntry>, String> {
             continue;
         }
 
-        let modified = metadata
-            .modified()
-            .ok()
-            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-            .map(|d| d.as_secs().to_string())
-            .unwrap_or_else(|| "Unknown".to_string());
+        let modified: DateTime<Local> = metadata.modified().map_err(|e| e.to_string())?.into();
 
         entries.push(FileEntry {
-            modified,
+            modified: modified.format("%Y-%m-%d %H:%M:%S").to_string(),
             name: name.clone(),
             path: path.to_string_lossy().to_string(),
             is_dir: metadata.is_dir(),
@@ -343,19 +338,14 @@ pub async fn get_trash_items() -> Result<Vec<FileEntry>, String> {
             Err(_) => continue,
         };
 
-        let modified = metadata
-            .modified()
-            .ok()
-            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-            .map(|d| d.as_secs().to_string())
-            .unwrap_or_else(|| "Unknown".to_string());
+        let modified: DateTime<Local> = metadata.modified().map_err(|e| e.to_string())?.into();
 
         entries.push(FileEntry {
             name,
             path,
             is_dir: metadata.is_dir(),
             size: metadata.len(),
-            modified,
+            modified: modified.format("%Y-%m-%d %H:%M:%S").to_string(),
             file_type: if metadata.is_dir() { "directory".to_string() } else { "file".to_string() },
             is_hidden: false,
         });
