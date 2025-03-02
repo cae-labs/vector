@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, MouseEvent } from 'react';
 import { ContextMenuLocation } from '@/types';
+import { platform } from '@tauri-apps/plugin-os';
 
 import { FileItem } from '@/components/FileItem';
 import { ContextMenu } from '@/components/ContextMenu';
 import { StatusBar } from '@/components/StatusBar';
 import { FileEntry } from '@/hooks/useFileSystem';
-import { platform } from '@tauri-apps/plugin-os';
 
 interface FileListProps {
 	files: FileEntry[];
@@ -62,6 +62,7 @@ export function FileList({
 		location: ContextMenuLocation.EMPTY_SPACE
 	});
 
+	const [isMacOS, setIsMacOS] = useState(false);
 	const fileListContainerRef = useRef<HTMLDivElement>(null);
 	const fileItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -149,6 +150,60 @@ export function FileList({
 	const handleOpenItem = (file: FileEntry) => {
 		onOpenFile(file);
 	};
+
+	useEffect(() => {
+		setIsMacOS(platform() === 'macos');
+	}, []);
+
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			const cmdOrCtrl = isMacOS ? event.metaKey : event.ctrlKey;
+
+			if (selectedItem) {
+				if ((isMacOS && cmdOrCtrl && event.key === 'Backspace') || (!isMacOS && event.key === 'Delete')) {
+					event.preventDefault();
+					onDeleteFile(selectedItem);
+				}
+			}
+
+			if (cmdOrCtrl) {
+				switch (event.key.toLowerCase()) {
+					case 'c':
+						if (selectedItem) {
+							event.preventDefault();
+							const selectedFile = files.find((file) => file.path === selectedItem);
+							if (selectedFile) onCopyFile(selectedFile.path);
+						}
+						break;
+					case 'x':
+						if (selectedItem) {
+							event.preventDefault();
+							const selectedFile = files.find((file) => file.path === selectedItem);
+							if (selectedFile) onCutFile(selectedFile.path);
+						}
+						break;
+					case 'v':
+						if (canPaste) {
+							event.preventDefault();
+							onPasteFiles();
+						}
+						break;
+					case 'n':
+						if (event.shiftKey) {
+							event.preventDefault();
+							handleCreateFolder();
+						} else {
+							event.preventDefault();
+							handleCreateFile();
+						}
+						break;
+				}
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [selectedItem, files, canPaste, isMacOS]);
 
 	useEffect(() => {
 		if (newlyCreatedPath && files.length > 0) {

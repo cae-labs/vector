@@ -29,6 +29,9 @@ importers:
       '@tauri-apps/plugin-store':
         specifier: ~2
         version: 2.2.0
+      '@tauri-apps/plugin-window-state':
+        specifier: ~2
+        version: 2.2.1
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -569,6 +572,9 @@ packages:
 
   '@tauri-apps/plugin-store@2.2.0':
     resolution: {integrity: sha512-hJTRtuJis4w5fW1dkcgftsYxKXK0+DbAqurZ3CURHG5WkAyyZgbxpeYctw12bbzF9ZbZREXZklPq8mocCC3Sgg==}
+
+  '@tauri-apps/plugin-window-state@2.2.1':
+    resolution: {integrity: sha512-L7FhG/ocQNt8t+TMBkvl8eLhCU6I19t848unKMUgNHuvwHPaurzZr4knulNyKzqz7zVYSz9AdvgWy4915eq+AA==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -1252,6 +1258,10 @@ snapshots:
       '@tauri-apps/api': 2.3.0
 
   '@tauri-apps/plugin-store@2.2.0':
+    dependencies:
+      '@tauri-apps/api': 2.3.0
+
+  '@tauri-apps/plugin-window-state@2.2.1':
     dependencies:
       '@tauri-apps/api': 2.3.0
 
