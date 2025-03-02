@@ -474,7 +474,7 @@ export function FileList({
 
 	return (
 		<div className="h-screen flex flex-col">
-			<div className="sticky top-0 flex p-1 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b-[1px] border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
+			<div className="sticky top-0 flex p-0.5 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b-[1px] border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
 				<div className="w-11"></div>
 				<div className="flex-1 py-1" onClick={() => toggleSort('name')}>
 					Name{getSortIndicator('name')}

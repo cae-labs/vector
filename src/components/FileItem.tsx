@@ -26,7 +26,9 @@ import {
 	AppWindowMac,
 	FileLock2,
 	FileDiff,
-	LucideIcon
+	LucideIcon,
+	ChevronRight,
+	ChevronDown
 } from 'lucide-react';
 
 interface FileItemProps {
@@ -44,6 +46,9 @@ interface FileItemProps {
 	onCancelRename: () => void;
 	zoomLevel?: number;
 	iconSize?: number;
+	isExpanded?: boolean;
+	onToggleExpand?: (file: FileEntry) => void;
+	depth?: number;
 }
 
 export function FileItem({
@@ -60,16 +65,21 @@ export function FileItem({
 	onSaveRename,
 	onCancelRename,
 	zoomLevel = 1.0,
-	iconSize = 18
+	iconSize = 18,
+	isExpanded = false,
+	onToggleExpand,
+	depth = 0
 }: FileItemProps) {
 	const [isMacOS, setIsMacOS] = useState(false);
 	const [relativeTime, setRelativeTime] = useState('');
 	const [isLaunching, setIsLaunching] = useState(false);
+	const [isHovering, setIsHovering] = useState(false);
 
 	const marginRight = zoomLevel / 2;
 	const scaledIconSize = Math.round(iconSize * zoomLevel);
 	const paddingY = Math.max(2.5, Math.round(2.5 * zoomLevel));
 	const fontSize = `${Math.max(0.75, 0.75 * zoomLevel)}rem`;
+	const indentSize = 15;
 
 	useEffect(() => {
 		setIsMacOS(platform() === 'macos');
@@ -134,6 +144,13 @@ export function FileItem({
 		}
 
 		onOpen(file);
+	};
+
+	const handleExpandToggle = (e: MouseEvent) => {
+		e.stopPropagation();
+		if (onToggleExpand && file.is_dir) {
+			onToggleExpand(file);
+		}
 	};
 
 	const FileIcon = () => {
@@ -225,13 +242,26 @@ export function FileItem({
 
 	return (
 		<div
-			className={`cursor-default flex items-center px-5 py-[2.5px] border-b border-stone-300 dark:border-stone-700/50 ${isSelected && 'bg-blue-100 dark:bg-[#0070FF]'}`}
+			className={`cursor-default flex items-center border-b border-stone-300 dark:border-stone-700/50 ${isSelected ? 'bg-blue-100 dark:bg-[#0070FF]' : ''}`}
 			onContextMenu={(e) => onContextMenu(e, file)}
 			onClick={() => onSelect(file)}
 			onDoubleClick={() => handleAppLaunch(file)}
+			onMouseEnter={() => setIsHovering(true)}
+			onMouseLeave={() => setIsHovering(false)}
 			style={{
-				padding: `${paddingY}px 1.25rem`
+				padding: `${paddingY}px 1.25rem`,
+				paddingLeft: `${depth * indentSize + 10}px`
 			}}>
+			{file.is_dir && !file.name.endsWith('.app') && (
+				<div
+					className={`flex items-center justify-center w-4 h-4 mr-1 ${isMacOS || isHovering ? 'opacity-100' : 'opacity-0'}`}
+					onClick={handleExpandToggle}
+					style={{ transition: 'opacity 0.15s ease' }}>
+					{isExpanded ? <ChevronDown size={14} className="text-stone-500" /> : <ChevronRight size={14} className="text-stone-500" />}
+				</div>
+			)}
+			{(!file.is_dir || file.name.endsWith('.app')) && <div className="w-4 mr-1"></div>}
+
 			<div style={{ marginRight: `${marginRight}rem` }}>
 				<FileIcon />
 			</div>
