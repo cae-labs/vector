@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, MouseEvent } from 'react';
+// redo this entire file
+import { useState, useEffect, useRef, MouseEvent } from 'react';
 import { ContextMenuLocation } from '@/types';
 import { platform } from '@tauri-apps/plugin-os';
 import { load } from '@tauri-apps/plugin-store';
@@ -12,7 +13,6 @@ import { AlternatingBackgroundRows } from '@/components/Background';
 import { ChevronUp, ChevronDown, Folder, FileText } from 'lucide-react';
 
 const storePromise = load('vector-settings.json', { autoSave: false });
-const sortPreferenceCache = new Map<string, SortOption>();
 
 export enum SortOption {
 	NAME_ASC = 'name_asc',
@@ -114,37 +114,25 @@ export function FileList({
 
 	const [sortOption, setSortOption] = useState<SortOption>(SortOption.NAME_ASC);
 	const [storeInstance, setStoreInstance] = useState<any>(null);
-	const storeLoaded = useRef(false);
 
 	const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 	const [expandedContents, setExpandedContents] = useState<Record<string, FileEntry[]>>({});
 	const [isLoadingExpanded, setIsLoadingExpanded] = useState<Record<string, boolean>>({});
 
 	useEffect(() => {
-		if (storeLoaded.current) return;
-
 		const initStore = async () => {
 			try {
 				const store = await storePromise;
 				setStoreInstance(store);
-				storeLoaded.current = true;
 
-				const [savedZoom, savedExpandedFolders] = await Promise.all([store.get('zoom-level'), store.get('expanded-folders')]);
-
+				const savedZoom = await store.get('zoom-level');
 				if (savedZoom) {
 					setZoomLevel(savedZoom);
 				}
 
+				const savedExpandedFolders = await store.get('expanded-folders');
 				if (savedExpandedFolders) {
 					setExpandedFolders(savedExpandedFolders);
-				}
-
-				if (currentPath) {
-					const sortPref = await store.get(`sort-${currentPath}`);
-					if (sortPref) {
-						sortPreferenceCache.set(currentPath, sortPref);
-						setSortOption(sortPref);
-					}
 				}
 			} catch (error) {
 				console.error('Failed to initialize store:', error);
@@ -152,58 +140,57 @@ export function FileList({
 		};
 
 		initStore();
-	}, [currentPath]);
+	}, []);
 
 	useEffect(() => {
 		if (!storeInstance) return;
 
-		const saveZoomTimeout = setTimeout(async () => {
+		const saveZoomLevel = async () => {
 			try {
 				await storeInstance.set('zoom-level', zoomLevel);
 				await storeInstance.save();
 			} catch (error) {
 				console.error('Failed to save zoom level:', error);
 			}
-		}, 500);
+		};
 
-		return () => clearTimeout(saveZoomTimeout);
+		saveZoomLevel();
 	}, [zoomLevel, storeInstance]);
 
 	useEffect(() => {
 		if (!storeInstance) return;
 
-		const saveExpandedTimeout = setTimeout(async () => {
+		const saveExpandedFolders = async () => {
 			try {
 				await storeInstance.set('expanded-folders', expandedFolders);
 				await storeInstance.save();
 			} catch (error) {
 				console.error('Failed to save expanded folders:', error);
 			}
-		}, 500);
+		};
 
-		return () => clearTimeout(saveExpandedTimeout);
+		saveExpandedFolders();
 	}, [expandedFolders, storeInstance]);
 
 	useEffect(() => {
 		if (!storeInstance || !currentPath) return;
 
-		if (sortPreferenceCache.has(currentPath)) {
-			setSortOption(sortPreferenceCache.get(currentPath)!);
-			return;
-		}
-
 		const loadPreference = async () => {
 			try {
+				isLoadingPreference.current = true;
 				const preference = await storeInstance.get(`sort-${currentPath}`);
 
 				if (preference) {
-					sortPreferenceCache.set(currentPath, preference);
 					setSortOption(preference);
 				} else {
 					setSortOption(SortOption.NAME_ASC);
 				}
+				setTimeout(() => {
+					isLoadingPreference.current = false;
+				}, 100);
 			} catch (error) {
 				console.error('Failed to load preference:', error);
+				isLoadingPreference.current = false;
 			}
 		};
 
@@ -211,114 +198,19 @@ export function FileList({
 	}, [currentPath, storeInstance]);
 
 	useEffect(() => {
-		if (!storeInstance || !currentPath) return;
+		if (!storeInstance || !currentPath || isLoadingPreference.current) return;
 
-		sortPreferenceCache.set(currentPath, sortOption);
-
-		const saveSortTimeout = setTimeout(async () => {
+		const savePreference = async () => {
 			try {
 				await storeInstance.set(`sort-${currentPath}`, sortOption);
 				await storeInstance.save();
 			} catch (error) {
 				console.error('Failed to save preference:', error);
 			}
-		}, 500);
+		};
 
-		return () => clearTimeout(saveSortTimeout);
+		savePreference();
 	}, [sortOption, currentPath, storeInstance]);
-
-	useEffect(() => {
-		const loadExpandedFolderContents = async () => {
-			const foldersToLoad = Object.entries(expandedFolders)
-				.filter(([folderPath, isExpanded]) => isExpanded && !expandedContents[folderPath] && !isLoadingExpanded[folderPath])
-				.map(([folderPath]) => folderPath);
-
-			if (foldersToLoad.length === 0) return;
-
-			setIsLoadingExpanded((prev) => {
-				const newState = { ...prev };
-				foldersToLoad.forEach((path) => {
-					newState[path] = true;
-				});
-				return newState;
-			});
-
-			const results = await Promise.allSettled(
-				foldersToLoad.map(async (folderPath) => {
-					try {
-						const entries = await invoke<FileEntry[]>('read_directory', {
-							path: folderPath,
-							showHidden
-						});
-						return { folderPath, entries };
-					} catch (error) {
-						console.error(`Failed to load contents for ${folderPath}:`, error);
-						throw error;
-					}
-				})
-			);
-
-			const newContents = { ...expandedContents };
-			const newLoadingStates = { ...isLoadingExpanded };
-
-			results.forEach((result, index) => {
-				const folderPath = foldersToLoad[index];
-				newLoadingStates[folderPath] = false;
-
-				if (result.status === 'fulfilled') {
-					newContents[result.value.folderPath] = result.value.entries;
-				}
-			});
-
-			setExpandedContents(newContents);
-			setIsLoadingExpanded(newLoadingStates);
-		};
-
-		loadExpandedFolderContents();
-	}, [expandedFolders, showHidden]);
-
-	useEffect(() => {
-		setExpandedContents({});
-	}, [showHidden]);
-
-	useEffect(() => {
-		const refreshExpandedContents = async () => {
-			const expandedFolderPaths = Object.entries(expandedFolders)
-				.filter(([_, isExpanded]) => isExpanded)
-				.map(([path]) => path);
-
-			if (expandedFolderPaths.length === 0) return;
-
-			const results = await Promise.allSettled(
-				expandedFolderPaths.map(async (folderPath) => {
-					try {
-						const entries = await invoke<FileEntry[]>('read_directory', {
-							path: folderPath,
-							showHidden
-						});
-						return { folderPath, entries };
-					} catch (error) {
-						console.error(`Failed to refresh contents for ${folderPath}:`, error);
-						throw error;
-					}
-				})
-			);
-
-			const newContents = { ...expandedContents };
-
-			results.forEach((result) => {
-				if (result.status === 'fulfilled') {
-					newContents[result.value.folderPath] = result.value.entries;
-				}
-			});
-
-			setExpandedContents(newContents);
-		};
-
-		if (Object.keys(expandedFolders).some((path) => expandedFolders[path])) {
-			refreshExpandedContents();
-		}
-	}, [files, showHidden]);
 
 	useEffect(() => {
 		const loadExpandedFolderContents = async () => {
@@ -441,7 +333,7 @@ export function FileList({
 		});
 	};
 
-	const sortedFiles = useMemo(() => {
+	const getSortedFiles = () => {
 		return [...files].sort((a, b) => {
 			switch (sortOption) {
 				case SortOption.NAME_ASC:
@@ -474,44 +366,45 @@ export function FileList({
 					return 0;
 			}
 		});
-	}, [files, sortOption]);
+	};
 
-	const getSortedExpandedContents = useMemo(() => {
-		return (contents: FileEntry[]) => {
-			return [...contents].sort((a, b) => {
-				switch (sortOption) {
-					case SortOption.NAME_ASC:
-						if (a.is_dir && !b.is_dir) return -1;
-						if (!a.is_dir && b.is_dir) return 1;
-						return a.name.localeCompare(b.name);
+	const getSortedExpandedContents = (contents: FileEntry[]) => {
+		return [...contents].sort((a, b) => {
+			switch (sortOption) {
+				case SortOption.NAME_ASC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return a.name.localeCompare(b.name);
 
-					case SortOption.NAME_DESC:
-						if (a.is_dir && !b.is_dir) return -1;
-						if (!a.is_dir && b.is_dir) return 1;
-						return b.name.localeCompare(a.name);
+				case SortOption.NAME_DESC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return b.name.localeCompare(a.name);
 
-					case SortOption.DATE_ASC:
-						return new Date(a.modified).getTime() - new Date(b.modified).getTime();
+				case SortOption.DATE_ASC:
+					return new Date(a.modified).getTime() - new Date(b.modified).getTime();
 
-					case SortOption.DATE_DESC:
-						return new Date(b.modified).getTime() - new Date(a.modified).getTime();
+				case SortOption.DATE_DESC:
+					return new Date(b.modified).getTime() - new Date(a.modified).getTime();
 
-					case SortOption.SIZE_ASC:
-						if (a.is_dir && !b.is_dir) return -1;
-						if (!a.is_dir && b.is_dir) return 1;
-						return a.size - b.size;
+				case SortOption.DATE_DESC:
+					return new Date(b.modified).getTime() - new Date(a.modified).getTime();
 
-					case SortOption.SIZE_DESC:
-						if (a.is_dir && !b.is_dir) return -1;
-						if (!a.is_dir && b.is_dir) return 1;
-						return b.size - a.size;
+				case SortOption.SIZE_ASC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return a.size - b.size;
 
-					default:
-						return 0;
-				}
-			});
-		};
-	}, [sortOption]);
+				case SortOption.SIZE_DESC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return b.size - a.size;
+
+				default:
+					return 0;
+			}
+		});
+	};
 
 	const handleSortChange = (option: SortOption) => {
 		setSortOption(option);
@@ -711,6 +604,8 @@ export function FileList({
 			document.body.style.overflow = '';
 		};
 	}, [contextMenu.visible]);
+
+	const sortedFiles = getSortedFiles();
 
 	const renderFiles = () => {
 		const result: JSX.Element[] = [];
