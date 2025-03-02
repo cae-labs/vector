@@ -70,6 +70,7 @@ export function FileList({
 	onNavigate
 }: FileListProps) {
 	const isLoadingPreference = useRef(false);
+	const [isDragEnded, setIsDragEnded] = useState(false);
 
 	const [contextMenu, setContextMenu] = useState<{
 		visible: boolean;
@@ -433,7 +434,7 @@ export function FileList({
 	};
 
 	const handleBackgroundClick = (e: MouseEvent) => {
-		if (e.target === e.currentTarget) {
+		if (e.target === e.currentTarget && !isDragEnded) {
 			setSelectedFiles([]);
 			setSelectedItems([]);
 			setLastSelectedIndex(null);
@@ -715,6 +716,9 @@ export function FileList({
 		if (!isDragging) return;
 		setIsDragging(false);
 		updateDragSelection();
+
+		setIsDragEnded(true);
+		setTimeout(() => setIsDragEnded(false), 100);
 	};
 
 	const captureFilePositions = () => {
@@ -790,7 +794,6 @@ export function FileList({
 				return newPaths;
 			});
 		} else {
-			console.log();
 			setSelectedFiles(filesInSelection);
 			setSelectedItems(pathsInSelection);
 		}
@@ -963,7 +966,7 @@ export function FileList({
 				onMouseDown={handleMouseDown}
 				onContextMenu={handleBackgroundContextMenu}
 				onClick={(e) => {
-					if (e.target === e.currentTarget) {
+					if (e.target === e.currentTarget && !isDragEnded) {
 						setSelectedFiles([]);
 						setSelectedItems([]);
 						setLastSelectedIndex(null);
