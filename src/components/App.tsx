@@ -125,6 +125,7 @@ function App() {
 					onToggleHidden={toggleHiddenFiles}
 					setShowTrash={setShowTrash}
 					trashUpdateKey={trashUpdateKey}
+					currentPath={currentPath}
 				/>
 
 				<div className="flex-1 flex flex-col overflow-hidden">

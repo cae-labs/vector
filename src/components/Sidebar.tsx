@@ -7,37 +7,56 @@ import { platform } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
+import {
+	LucideIcon,
+	File,
+	Hammer,
+	Download,
+	Image,
+	Music,
+	Videotape,
+	Film,
+	Dock,
+	FolderGit2,
+	Landmark,
+	Users,
+	House,
+	Rocket,
+	HardDrive,
+	Trash2
+} from 'lucide-react';
+
 interface SidebarProps {
 	onNavigate: (path: string) => void;
 	showHidden: boolean;
 	onToggleHidden: () => void;
 	setShowTrash: (set: boolean) => void;
 	trashUpdateKey: number;
+	currentPath: string;
 }
 
 interface UserFolder {
 	name: string;
 	path: string;
-	icon: string;
+	icon: LucideIcon;
 	isHidden: boolean;
 }
 
 const COMMON_FOLDERS = [
-	{ name: 'Documents', icon: '📄' },
-	{ name: 'Developer', icon: '🛠️' },
-	{ name: 'Downloads', icon: '⬇️' },
-	{ name: 'Pictures', icon: '🖼️' },
-	{ name: 'Music', icon: '🎵' },
-	{ name: 'Videos', icon: '🎬' },
-	{ name: 'Desktop', icon: '🖥️' },
-	{ name: 'Projects', icon: '📂' },
-	{ name: 'Library', icon: '📚' },
-	{ name: 'Public', icon: '👥' },
-	{ name: '.config', icon: '⚙️' },
-	{ name: '.local', icon: '📦' }
+	{ name: 'Documents', icon: File },
+	{ name: 'Developer', icon: Hammer },
+	{ name: 'Downloads', icon: Download },
+	{ name: 'Pictures', icon: Image },
+	{ name: 'Music', icon: Music },
+	{ name: 'Videos', icon: Videotape },
+	{ name: 'Movies', icon: Film },
+	{ name: 'Desktop', icon: Dock },
+	{ name: 'Projects', icon: FolderGit2 },
+	{ name: 'Library', icon: Landmark },
+	{ name: 'Public', icon: Users }
 ];
 
-export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, trashUpdateKey }: SidebarProps) {
+export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, trashUpdateKey, currentPath }: SidebarProps) {
 	const [isMacOS, setIsMacOS] = useState<boolean>(false);
 	const [isFullscreen, setFullScreen] = useState<boolean>(false);
 	const [trashItemCount, setTrashItemCount] = useState<number>(0);
@@ -151,13 +170,20 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 				const homePath = await invoke<string>('get_home_directory');
 				setHomeDir(homePath);
 
-				const folders: UserFolder[] = [{ name: 'Home', path: homePath, icon: '🏠', isHidden: false }];
+				const folders: UserFolder[] = [
+					{
+						name: homePath.replace(/\/$/, '').split('/').pop(),
+						path: homePath,
+						icon: House,
+						isHidden: false
+					}
+				];
 
 				if (isMac) {
 					folders.push({
 						name: 'Applications',
 						path: '/Applications',
-						icon: '📱',
+						icon: Rocket,
 						isHidden: false
 					});
 				}
@@ -219,8 +245,10 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 								onNavigate(folder.path);
 							}}
 							onContextMenu={(e) => handleContextMenu(e, folder)}
-							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
-							<span className="text-stone-400">{folder.icon}</span>
+							className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${folder.path == currentPath ? 'bg-stone-300 dark:bg-stone-700/50' : 'hover:bg-stone-300 dark:hover:bg-stone-700/50'}`}>
+							<span className="text-blue-500 dark:text-blue-400">
+								<folder.icon size={16} />
+							</span>
 							<span>{folder.name}</span>
 						</button>
 					))}
@@ -237,8 +265,10 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 									onNavigate(file.path);
 								}}
 								onContextMenu={() => {}}
-								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
-								<span className="text-stone-400">{file.icon}</span>
+								className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${file.path == currentPath ? 'bg-stone-300 dark:bg-stone-700/50' : 'hover:bg-stone-300 dark:hover:bg-stone-700/50'}`}>
+								<span className="text-stone-500 dark:text-stone-400">
+									<file.icon size={16} />
+								</span>
 								<span>{file.name}</span>
 							</button>
 						))
@@ -249,7 +279,7 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 
 				{drives.length > 0 && (
 					<div className="mb-4">
-						<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">Drives</div>
+						<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">Locations</div>
 						{drives.map((drive) => (
 							<button
 								key={drive}
@@ -257,30 +287,33 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 									setShowTrash(false);
 									onNavigate(drive);
 								}}
-								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
-								<span className="text-stone-400">💾</span>
+								className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${drive == currentPath ? 'bg-stone-300 dark:bg-stone-700/50' : 'hover:bg-stone-300 dark:hover:bg-stone-700/50'}`}>
+								<span className="text-stone-500 dark:text-stone-400">
+									<HardDrive size={16} />
+								</span>
 								<span>{isMacOS && drive == '/' ? 'My Mac' : drive}</span>
 							</button>
 						))}
-					</div>
-				)}
 
-				{trashItemCount > 0 && (
-					<div>
-						<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">System</div>
-						<button
-							onClick={() => setShowTrash(true)}
-							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
-							<span className="text-stone-400">🗑️</span>
-							<span>
-								Trash
-								{trashItemCount > 0 && (
-									<span className="inline-flex items-center justify-center w-4 h-4 ms-2 text-xs font-semibold text-stone-800 bg-stone-300 dark:bg-stone-700/70 dark:text-stone-200 rounded-full">
-										{trashItemCount}
+						{trashItemCount > 0 && (
+							<div>
+								<button
+									onClick={() => setShowTrash(true)}
+									className="mt-0.5 w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
+									<span className="text-stone-500 dark:text-stone-400">
+										<Trash2 size={16} />
 									</span>
-								)}
-							</span>
-						</button>
+									<span>
+										Trash
+										{trashItemCount > 0 && (
+											<span className="inline-flex items-center justify-center w-4 h-4 ms-2 text-xs font-semibold text-stone-800 bg-stone-300 dark:bg-stone-700/70 dark:text-stone-200 rounded-full">
+												{trashItemCount}
+											</span>
+										)}
+									</span>
+								</button>
+							</div>
+						)}
 					</div>
 				)}
 			</div>

@@ -70,6 +70,8 @@ export function FileList({
 
 	const [renamingFile, setRenamingFile] = useState<string | null>(null);
 	const [newFileName, setNewFileName] = useState<string>('');
+
+	const [selectedFile, setSelectedFile] = useState<string | null>(null);
 	const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
 	const [creatingItem, setCreatingItem] = useState<{
@@ -146,11 +148,8 @@ export function FileList({
 	};
 
 	const handleSelectItem = (file: FileEntry) => {
+		setSelectedFile(file);
 		setSelectedItem(file.path);
-	};
-
-	const handleOpenItem = (file: FileEntry) => {
-		onOpenFile(file);
 	};
 
 	useEffect(() => {
@@ -170,6 +169,17 @@ export function FileList({
 
 			if (cmdOrCtrl) {
 				switch (event.key.toLowerCase()) {
+					case 'o':
+						if (selectedFile) {
+							if (event.shiftKey) {
+								event.preventDefault();
+								onOpenFile(selectedFile, true);
+							} else {
+								event.preventDefault();
+								onOpenFile(selectedFile);
+							}
+						}
+						break;
 					case 'c':
 						if (selectedItem) {
 							event.preventDefault();
@@ -188,6 +198,12 @@ export function FileList({
 						if (canPaste) {
 							event.preventDefault();
 							onPasteFiles();
+						}
+						break;
+					case 'r':
+						if (selectedFile) {
+							event.preventDefault();
+							startRenaming(selectedFile);
 						}
 						break;
 					case 'n':
@@ -295,7 +311,7 @@ export function FileList({
 							<FileItem
 								key={file.path}
 								file={file}
-								onOpen={handleOpenItem}
+								onOpen={onOpenFile}
 								onSelect={handleSelectItem}
 								onDelete={onDeleteFile}
 								onRename={startRenaming}

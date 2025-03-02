@@ -94,44 +94,45 @@ export function ContextMenu({
 	return (
 		<div
 			ref={menuRef}
-			className="fixed bg-white/80 dark:bg-stone-900/80 backdrop-blur-lg shadow-lg rounded-md border-1 border-stone-200 dark:border-stone-500/50 dark:ring-1 dark:ring-black z-50 text-sm"
+			className="fixed bg-stone-100/40 dark:bg-stone-900/80 backdrop-blur-lg shadow-lg rounded-md border-1 border-stone-200 dark:border-stone-500/50 dark:ring-1 dark:ring-black z-50 text-sm"
 			style={{ minWidth: '180px' }}>
 			<ul className="py-1">
 				{location === ContextMenuLocation.FILE_LIST && file && (
 					<>
 						{restoreFromTrash ? (
 							<>
-								<li>
+								<li className="mx-1.5 border-b pt-0.5 pb-1.5 border-stone-300 dark:border-stone-600">
 									<button
 										onClick={() => {
 											restoreFromTrash(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:hover:text-white text-blue-600">
+										className="w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
 										Restore
 									</button>
 								</li>
-								<li>
+								<li className="mx-1.5 pt-1.5 pb-0.5">
 									<button
 										onClick={() => {
 											permanentlyDelete?.(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:hover:text-white text-red-600">
+										className="w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
 										Delete Permanently
 									</button>
 								</li>
 							</>
 						) : (
 							<>
-								<li className="mx-1.5 border-b pb-1.5 border-stone-300 dark:border-stone-600">
+								<li className="mx-1.5 border-b pt-0.5 pb-1.5 border-stone-300 dark:border-stone-600">
 									<button
 										onClick={() => {
 											onOpen(file);
 											onClose();
 										}}
-										className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+										className="w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
 										{endsWith(file.path, '.app') ? 'Open' : file.is_dir ? 'Open Folder' : 'Open'}
+										<KeybindBadge>{isMacOS ? '⌘ O' : 'Ctrl+O'}</KeybindBadge>
 									</button>
 
 									{endsWith(file.path, '.app') && (
@@ -141,21 +142,31 @@ export function ContextMenu({
 													onOpen(file, true);
 													onClose();
 												}}
-												className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-												Show Package Contents
+												className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+												Show Package Contents <KeybindBadge>{isMacOS ? '⌘ ⇧ o' : 'Ctrl+⇧+O'}</KeybindBadge>
 											</button>
 										</li>
 									)}
 								</li>
-
+								<li className="mx-1.5 mt-1 border-b pt-0.5 pb-1.5 border-stone-300 dark:border-stone-600">
+									<button
+										onClick={() => {
+											onDelete(file.path);
+											onClose();
+										}}
+										className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+										<span>Move to Trash</span>
+										<KeybindBadge>{isMacOS ? '⌘ ⌫' : 'Delete'}</KeybindBadge>
+									</button>
+								</li>
 								<li className="mx-1.5 pt-1.5">
 									<button
 										onClick={() => {
 											onCopy(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-										Copy <KeybindBadge>{isMacOS ? '⌘C' : 'Ctrl+C'}</KeybindBadge>
+										className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+										Copy <KeybindBadge>{isMacOS ? '⌘ C' : 'Ctrl+C'}</KeybindBadge>
 									</button>
 								</li>
 								<li className="mx-1.5 mt-1">
@@ -164,29 +175,18 @@ export function ContextMenu({
 											onCut(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-										Cut <KeybindBadge>{isMacOS ? '⌘X' : 'Ctrl+X'}</KeybindBadge>
+										className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+										Cut <KeybindBadge>{isMacOS ? '⌘ X' : 'Ctrl+X'}</KeybindBadge>
 									</button>
 								</li>
-								<li className="mx-1.5 mt-1 border-b pb-1.5 border-stone-300 dark:border-stone-600">
+								<li className="mx-1.5 mt-1 pb-1.5">
 									<button
 										onClick={() => {
 											onRename(file);
 											onClose();
 										}}
-										className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-										Rename
-									</button>
-								</li>
-								<li className="mx-1.5 py-1.5">
-									<button
-										onClick={() => {
-											onDelete(file.path);
-											onClose();
-										}}
-										className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:hover:text-white text-red-600 dark: flex justify-between items-center">
-										<span>Move to Trash</span>
-										<KeybindBadge>{isMacOS ? '⌘⌫' : 'Delete'}</KeybindBadge>
+										className="w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+										Rename <KeybindBadge>{isMacOS ? '⌘ R' : 'Ctrl+R'}</KeybindBadge>
 									</button>
 								</li>
 							</>
@@ -201,7 +201,7 @@ export function ContextMenu({
 								onPinUnpinFolder(file.path, 'unpin');
 								onClose();
 							}}
-							className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+							className="w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
 							Unpin from sidebar
 						</button>
 					</li>
@@ -211,15 +211,17 @@ export function ContextMenu({
 					<>
 						<li
 							className={
-								file && location === ContextMenuLocation.FILE_LIST ? 'pt-1.5 mx-1.5 border-t pb-1.5 border-stone-300 dark:border-stone-600' : ''
+								file && location === ContextMenuLocation.FILE_LIST
+									? 'pt-1.5 mx-1.5 border-t pb-1.5 border-stone-300 dark:border-stone-600'
+									: 'pb-0.5 mx-1.5'
 							}>
 							<button
 								onClick={() => {
 									onCreateFile();
 									onClose();
 								}}
-								className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-								New File <KeybindBadge>{isMacOS ? '⌘N' : 'Ctrl+N'}</KeybindBadge>
+								className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+								New File <KeybindBadge>{isMacOS ? '⌘ N' : 'Ctrl+N'}</KeybindBadge>
 							</button>
 						</li>
 						<li className="mx-1.5 mb-1.5">
@@ -228,8 +230,8 @@ export function ContextMenu({
 									onCreateFolder();
 									onClose();
 								}}
-								className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-								New Folder <KeybindBadge>{isMacOS ? '⌘⇧N' : 'Ctrl+⇧+N'}</KeybindBadge>
+								className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+								New Folder <KeybindBadge>{isMacOS ? '⌘ ⇧ N' : 'Ctrl+⇧+N'}</KeybindBadge>
 							</button>
 						</li>
 					</>
@@ -242,8 +244,8 @@ export function ContextMenu({
 								onPaste();
 								onClose();
 							}}
-							className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-							Paste <KeybindBadge>{isMacOS ? '⌘V' : 'Ctrl+V'}</KeybindBadge>
+							className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+							Paste <KeybindBadge>{isMacOS ? '⌘ V' : 'Ctrl+V'}</KeybindBadge>
 						</button>
 					</li>
 				)}
@@ -263,8 +265,8 @@ export function ContextMenu({
 								onToggleHidden();
 								onClose();
 							}}
-							className="w-full text-left px-2 rounded hover:bg-stone-100 dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
-							{showHidden ? 'Hide hidden files' : 'Show hidden files'} <KeybindBadge>{isMacOS ? '⌘+H' : 'Ctrl+H'}</KeybindBadge>
+							className="group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-white flex justify-between items-center">
+							{showHidden ? 'Hide hidden files' : 'Show hidden files'} <KeybindBadge>{isMacOS ? '⌘ H' : 'Ctrl+H'}</KeybindBadge>
 						</button>
 					</li>
 				)}
