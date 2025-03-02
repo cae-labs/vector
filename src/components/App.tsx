@@ -13,7 +13,7 @@ import { platform } from '@tauri-apps/plugin-os';
 
 const FileManagerToggle = ({ showHidden, isMacOS }) => {
 	const keybind = isMacOS ? '⌘+H' : 'Ctrl+H';
-	const message = showHidden ? 'Hide hidden' : 'Show hidden';
+	const message = showHidden ? 'Showing hidden' : 'Hidden files not shown';
 
 	return (
 		<div className="flex items-center space-x-2">

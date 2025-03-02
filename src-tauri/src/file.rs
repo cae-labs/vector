@@ -233,6 +233,10 @@ pub async fn get_trash_items() -> Result<Vec<FileEntry>, String> {
 
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("Unknown").to_string();
 
+        if name == ".DS_Store" {
+            continue;
+        }
+
         let modified = metadata
             .modified()
             .ok()
@@ -263,6 +267,7 @@ pub async fn get_trash_items() -> Result<Vec<FileEntry>, String> {
     for item in trash_dir {
         let path = item.id.display().to_string();
         let name = item.name.unwrap_or_else(|| path.clone());
+
         let metadata = match std::fs::metadata(&path) {
             Ok(m) => m,
             Err(_) => continue,
