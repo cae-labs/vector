@@ -34,7 +34,8 @@ function App() {
 		canGoBack,
 		canGoForward,
 		isOutsideHomeDir,
-		initDirectory
+		initDirectory,
+		loadDirectory
 	} = useFileSystem();
 
 	const [isMacOS, setIsMacOS] = useState(false);
@@ -48,8 +49,10 @@ function App() {
 	useEffect(() => {
 		const initializeApp = async () => {
 			const homePath = await getHomeDirectory();
-			if (homePath) {
+			if (homePath && !currentPath) {
 				await initDirectory(homePath);
+			} else if (currentPath) {
+				await loadDirectory(currentPath);
 			}
 		};
 

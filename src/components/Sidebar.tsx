@@ -149,7 +149,7 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 		};
 
 		initializeSidebar();
-	}, [showHidden]);
+	}, []);
 
 	useEffect(() => {
 		checkTrashItems();
@@ -158,7 +158,7 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 	const displayFolders = userFolders.filter((folder) => showHidden || !folder.isHidden);
 
 	return (
-		<div className="w-48 bg-gray-50 border-r flex flex-col overflow-hidden cursor-default">
+		<div className="w-48 bg-gray-200 border-r border-gray-400 flex flex-col overflow-hidden cursor-default">
 			<div className="flex-1 overflow-y-auto p-2 space-y-1">
 				<div className="mb-4">
 					<div className="px-2 mb-2 text-xs font-medium text-gray-500">Favorites</div>
@@ -223,7 +223,14 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 							onClick={() => setShowTrash(true)}
 							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
 							<span className="text-gray-400">🗑️</span>
-							<span>Trash{trashItemCount > 0 && ` (${trashItemCount})`}</span>
+							<span>
+								Trash
+								{trashItemCount > 0 && (
+									<span className="inline-flex items-center justify-center w-4 h-4 ms-2 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">
+										{trashItemCount}
+									</span>
+								)}
+							</span>
 						</button>
 					</div>
 				)}

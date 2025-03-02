@@ -28,7 +28,7 @@ export function StatusBar({ files, currentPath, showHidden }: StatusBarProps) {
 	}, []);
 
 	return (
-		<div className="sticky bottom-0 cursor-default bg-gray-100 px-2.5 py-1.5 border-t text-xs text-gray-500 flex justify-between">
+		<div className="mt-13 sticky bottom-0 cursor-default bg-gray-100 px-2.5 py-1.5 border-t border-gray-300 text-xs text-gray-500 flex justify-between">
 			{/* make the currentPath navigateble  */}
 			{currentPath == 'internal:trash' ? (
 				<span>{files.length === 1 ? '1 item in Trash' : `${files.length} items in Trash`}</span>

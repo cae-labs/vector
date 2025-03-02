@@ -257,6 +257,7 @@ export function useFileSystem() {
 		canGoBack,
 		canGoForward,
 		isOutsideHomeDir,
-		initDirectory
+		initDirectory,
+		loadDirectory
 	};
 }

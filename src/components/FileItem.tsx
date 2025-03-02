@@ -85,7 +85,7 @@ export function FileItem({
 
 	return (
 		<div
-			className={`cursor-default flex items-center p-2 border-b ${isSelected && 'bg-blue-100'}`}
+			className={`cursor-default flex items-center p-2 border-b border-gray-300 ${isSelected && 'bg-blue-100'}`}
 			onContextMenu={(e) => onContextMenu(e, file)}
 			onClick={() => onSelect(file)}
 			onDoubleClick={() => onOpen(file)}>
@@ -97,7 +97,7 @@ export function FileItem({
 						type="text"
 						value={newName}
 						onChange={(e) => setNewName(e.target.value)}
-						className="flex-1 p-1 border rounded"
+						className="flex-1 p-1 border border-gray-300 rounded"
 						autoFocus
 						onKeyDown={(e) => {
 							if (e.key === 'Enter') onSaveRename();
