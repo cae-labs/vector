@@ -14,6 +14,7 @@ pub fn run() {
             file::create_file,
             file::rename_item,
             file::get_home_directory,
+            file::delete_item,
             file::move_to_trash,
             file::get_trash_items,
             file::restore_from_trash,

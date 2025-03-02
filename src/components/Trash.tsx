@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
 import { FileEntry } from '@/hooks/useFileSystem';
 import { FileList } from '@/components/FileList';
+import { invoke } from '@tauri-apps/api/core';
 
 export function Trash() {
 	const [items, setItems] = useState<FileEntry[]>([]);
@@ -33,7 +33,7 @@ export function Trash() {
 
 	const handlePermanentDelete = async (path: string) => {
 		try {
-			await invoke('permanently_delete_from_trash', { path });
+			await invoke('delete_item', { path });
 			await loadTrashItems();
 		} catch (err) {
 			console.error(err);
@@ -56,7 +56,7 @@ export function Trash() {
 	return (
 		<div className="h-full">
 			<FileList
-				items={items}
+				files={items}
 				restoreFromTrash={handleRestore}
 				permanentlyDelete={handlePermanentDelete}
 				showHidden={false}
