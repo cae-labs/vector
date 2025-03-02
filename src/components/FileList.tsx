@@ -8,6 +8,7 @@ import { FileItem } from '@/components/FileItem';
 import { ContextMenu } from '@/components/ContextMenu';
 import { StatusBar } from '@/components/StatusBar';
 import { FileEntry } from '@/hooks/useFileSystem';
+import { AlternatingBackgroundRows } from '@/components/Background';
 import { ChevronUp, ChevronDown, Folder, FileText } from 'lucide-react';
 
 const storePromise = load('vector-settings.json', { autoSave: false });
@@ -633,13 +634,8 @@ export function FileList({
 	const sortedFiles = getSortedFiles();
 
 	const renderFiles = () => {
-		let rowIndex = 0;
-
-		if (sortedFiles.length === 0 && !creatingItem.type) {
-			return <div className="flex justify-center items-center h-40 text-stone-500 dark:text-stone-400">This folder is empty</div>;
-		}
-
 		const result: JSX.Element[] = [];
+		let rowIndex = 0;
 
 		const renderFileWithChildren = (file: FileEntry, depth: number = 0) => {
 			const isExpanded = file.is_dir && expandedFolders[file.path];
@@ -775,6 +771,12 @@ export function FileList({
 				)}
 
 				{renderFiles()}
+
+				<AlternatingBackgroundRows
+					startIndex={renderFiles().length + (creatingItem.type ? 1 : 0)}
+					containerRef={fileListContainerRef}
+					zoomLevel={zoomLevel}
+				/>
 
 				{contextMenu.visible && (
 					<ContextMenu
