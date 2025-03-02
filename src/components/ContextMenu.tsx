@@ -12,10 +12,10 @@ interface ContextMenuProps {
 	location: ContextMenuLocation;
 	onClose: () => void;
 	onOpen: (file: FileEntry) => void;
-	onDelete: (path: string) => void;
+	onDelete: ((path: string) => void) | (() => void);
 	onRename: (file: FileEntry) => void;
-	onCopy: (path: string) => void;
-	onCut: (path: string) => void;
+	onCopy: ((path: string) => void) | (() => void);
+	onCut: ((path: string) => void) | (() => void);
 	refreshDirectory: () => void;
 	onPaste: () => void;
 	onCreateFile: () => void;
@@ -26,6 +26,7 @@ interface ContextMenuProps {
 	onToggleHidden: () => void;
 	restoreFromTrash?: (path: string) => void;
 	permanentlyDelete?: (path: string) => void;
+	selectionCount?: number;
 }
 
 export function ContextMenu({
@@ -48,10 +49,12 @@ export function ContextMenu({
 	showHidden,
 	onToggleHidden,
 	restoreFromTrash,
-	permanentlyDelete
+	permanentlyDelete,
+	selectionCount = 0
 }: ContextMenuProps) {
 	const menuRef = useRef<HTMLDivElement>(null);
 	const [isMacOS, setIsMacOS] = useState(false);
+	const isMultipleSelection = selectionCount > 1;
 
 	const endsWith = (str: string, suffix: string): boolean => {
 		return str.indexOf(suffix, str.length - suffix.length) !== -1;
@@ -132,7 +135,9 @@ export function ContextMenu({
 									<div className="absolute bottom-0 left-1.5 right-1.5 h-px bg-stone-300 dark:bg-stone-400/40"></div>
 									<button
 										onClick={() => {
-											onOpen(file);
+											if (!isMultipleSelection) {
+												onOpen(file);
+											}
 											onClose();
 										}}
 										className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
@@ -143,7 +148,9 @@ export function ContextMenu({
 										<li>
 											<button
 												onClick={() => {
-													onOpen(file, true);
+													if (!isMultipleSelection) {
+														onOpen(file, true);
+													}
 													onClose();
 												}}
 												className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
@@ -168,7 +175,11 @@ export function ContextMenu({
 									<div className="absolute bottom-0 left-1.5 right-1.5 h-px bg-stone-300 dark:bg-stone-400/40"></div>
 									<button
 										onClick={() => {
-											onDelete(file.path);
+											if (isMultipleSelection) {
+												onDelete();
+											} else {
+												onDelete(file.path);
+											}
 											onClose();
 										}}
 										className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
@@ -187,7 +198,11 @@ export function ContextMenu({
 								<li className="mx-1 pt-1.5">
 									<button
 										onClick={() => {
-											onCopy(file.path);
+											if (isMultipleSelection) {
+												onCopy();
+											} else {
+												onCopy(file.path);
+											}
 											onClose();
 										}}
 										className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
@@ -197,7 +212,11 @@ export function ContextMenu({
 								<li className="mx-1">
 									<button
 										onClick={() => {
-											onCut(file.path);
+											if (isMultipleSelection) {
+												onCut();
+											} else {
+												onCut(file.path);
+											}
 											onClose();
 										}}
 										className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
@@ -207,7 +226,9 @@ export function ContextMenu({
 								<li className="mx-1 pb-1.5">
 									<button
 										onClick={() => {
-											onRename(file);
+											if (!isMultipleSelection) {
+												onRename(file);
+											}
 											onClose();
 										}}
 										className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
