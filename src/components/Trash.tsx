@@ -3,7 +3,11 @@ import { FileEntry } from '@/hooks/useFileSystem';
 import { FileList } from '@/components/FileList';
 import { invoke } from '@tauri-apps/api/core';
 
-export function Trash() {
+interface TrashProps {
+	onTrashUpdate?: () => void;
+}
+
+export function Trash({ onTrashUpdate }: TrashProps) {
 	const [items, setItems] = useState<FileEntry[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -13,6 +17,7 @@ export function Trash() {
 			setIsLoading(true);
 			const trashItems = await invoke<FileEntry[]>('get_trash_items');
 			setItems(trashItems);
+			onTrashUpdate?.();
 		} catch (err) {
 			console.error(err);
 			setError(err instanceof Error ? err.message : 'Failed to load trash items');
@@ -25,6 +30,7 @@ export function Trash() {
 		try {
 			await invoke('restore_from_trash', { path });
 			await loadTrashItems();
+			onTrashUpdate?.();
 		} catch (err) {
 			console.error(err);
 			setError(err instanceof Error ? err.message : 'Failed to restore item');
@@ -35,6 +41,7 @@ export function Trash() {
 		try {
 			await invoke('delete_item', { path });
 			await loadTrashItems();
+			onTrashUpdate?.();
 		} catch (err) {
 			console.error(err);
 			setError(err instanceof Error ? err.message : 'Failed to permanently delete item');

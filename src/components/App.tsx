@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import { Trash } from '@/components/Trash';
 import { Sidebar } from '@/components/Sidebar';
@@ -52,6 +52,7 @@ function App() {
 
 	const [isMacOS, setIsMacOS] = useState(false);
 	const [showTrash, setShowTrash] = useState(false);
+	const [trashUpdateKey, setTrashUpdateKey] = useState(0);
 
 	useEffect(() => {
 		setIsMacOS(platform() === 'macos');
@@ -95,12 +96,26 @@ function App() {
 		}
 	};
 
+	const handleDeleteItem = useCallback(
+		async (path: string) => {
+			await deleteItem(path);
+			setTrashUpdateKey((prev) => prev + 1);
+		},
+		[deleteItem]
+	);
+
 	return (
 		<div className="flex flex-col h-screen bg-white">
 			{error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
 
 			<div className="flex flex-1 overflow-hidden">
-				<Sidebar onNavigate={readDirectory} showHidden={showHidden} onToggleHidden={toggleHiddenFiles} setShowTrash={setShowTrash} />
+				<Sidebar
+					onNavigate={readDirectory}
+					showHidden={showHidden}
+					onToggleHidden={toggleHiddenFiles}
+					setShowTrash={setShowTrash}
+					trashUpdateKey={trashUpdateKey}
+				/>
 
 				<div className="flex-1 flex flex-col overflow-hidden">
 					{!showTrash ? (
@@ -120,7 +135,7 @@ function App() {
 								files={files}
 								currentPath={currentPath}
 								onOpenFile={handleOpenFile}
-								onDeleteFile={deleteItem}
+								onDeleteFile={handleDeleteItem}
 								onRenameFile={renameItem}
 								onCopyFile={copyItem}
 								onCutFile={cutItem}
@@ -134,7 +149,7 @@ function App() {
 							/>
 						</>
 					) : (
-						<Trash />
+						<Trash onTrashUpdate={() => setTrashUpdateKey((prev) => prev + 1)} />
 					)}
 				</div>
 			</div>

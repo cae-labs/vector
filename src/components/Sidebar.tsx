@@ -11,6 +11,7 @@ interface SidebarProps {
 	showHidden: boolean;
 	onToggleHidden: () => void;
 	setShowTrash: (set: boolean) => void;
+	trashUpdateKey: number;
 }
 
 interface UserFolder {
@@ -34,9 +35,10 @@ const COMMON_FOLDERS = [
 	{ name: '.local', icon: '📦' }
 ];
 
-export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash }: SidebarProps) {
+export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, trashUpdateKey }: SidebarProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isMacOS, setIsMacOS] = useState<boolean>(false);
+	const [trashItemCount, setTrashItemCount] = useState<number>(0);
 
 	const [homeDir, setHomeDir] = useState<string>('');
 	const [userFolders, setUserFolders] = useState<UserFolder[]>([]);
@@ -83,6 +85,16 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash }
 	const handlePinUnpin = (path: string, action: 'pin' | 'unpin') => {
 		console.log(`${action} folder: ${path}`);
 		// implement actual pinning/unpinning logic
+	};
+
+	const checkTrashItems = async () => {
+		try {
+			const trashItems = await invoke<FileEntry[]>('get_trash_items');
+			setTrashItemCount(trashItems.length);
+		} catch (error) {
+			console.error('Failed to check trash items:', error);
+			setTrashItemCount(0);
+		}
 	};
 
 	useEffect(() => {
@@ -133,6 +145,7 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash }
 				}
 
 				setUserFolders(folders);
+				await checkTrashItems();
 			} catch (error) {
 				console.error('Failed to get home directory contents:', error);
 			} finally {
@@ -142,6 +155,10 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash }
 
 		initializeSidebar();
 	}, [showHidden]);
+
+	useEffect(() => {
+		checkTrashItems();
+	}, [trashUpdateKey]);
 
 	const displayFolders = userFolders.filter((folder) => showHidden || !folder.isHidden);
 
@@ -204,15 +221,17 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash }
 					</div>
 				)}
 
-				<div>
-					<div className="px-2 mb-2 text-xs font-medium text-gray-500">System</div>
-					<button
-						onClick={() => setShowTrash(true)}
-						className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
-						<span className="text-gray-400">🗑️</span>
-						<span>Trash</span>
-					</button>
-				</div>
+				{trashItemCount > 0 && (
+					<div>
+						<div className="px-2 mb-2 text-xs font-medium text-gray-500">System</div>
+						<button
+							onClick={() => setShowTrash(true)}
+							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
+							<span className="text-gray-400">🗑️</span>
+							<span>Trash{trashItemCount > 0 && ` (${trashItemCount})`}</span>
+						</button>
+					</div>
+				)}
 			</div>
 
 			{contextMenu.visible && (
