@@ -20,6 +20,7 @@ export function useFileSystem() {
 	const [error, setError] = useState<string | null>(null);
 	const [showHidden, setShowHidden] = useState<boolean>(false);
 	const [isOutsideHomeDir, setIsOutsideHomeDir] = useState<boolean>(false);
+	const [canPaste, setCanPaste] = useState<boolean>(false);
 
 	const historyRef = useRef<string[]>([]);
 	const historyIndexRef = useRef<number>(-1);
@@ -33,8 +34,6 @@ export function useFileSystem() {
 		operation: null,
 		path: null
 	});
-
-	const canPaste = !!clipboard.current.path;
 
 	const updateNavigationState = useCallback(() => {
 		setCanGoBack(historyIndexRef.current > 0);
@@ -191,6 +190,7 @@ export function useFileSystem() {
 
 	const copyToClipboard = useCallback((path: string, operation: ClipboardOperation) => {
 		clipboard.current = { operation, path };
+		setCanPaste(true);
 	}, []);
 
 	const copyItem = useCallback(
@@ -225,6 +225,7 @@ export function useFileSystem() {
 
 			if (operation === 'cut') {
 				clipboard.current = { operation: null, path: null };
+				setCanPaste(false);
 			}
 
 			loadDirectory(currentPath);

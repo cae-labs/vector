@@ -157,7 +157,11 @@ function App() {
 			<div className="cursor-default bg-gray-100 px-2.5 py-1.5 border-t text-xs text-gray-500 flex justify-between">
 				{/* make the currentPath navigateble  */}
 				<span>
-					{files.length} items <span className="text-[10px] text-gray-400">{currentPath}</span>
+					{!showTrash && (
+						<span>
+							{files.length} items <span className="text-[10px] text-gray-400">{currentPath}</span>
+						</span>
+					)}
 				</span>
 				<FileManagerToggle showHidden={showHidden} isMacOS={isMacOS} />
 			</div>

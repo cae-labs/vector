@@ -36,7 +36,6 @@ const COMMON_FOLDERS = [
 ];
 
 export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, trashUpdateKey }: SidebarProps) {
-	const [isLoading, setIsLoading] = useState(true);
 	const [isMacOS, setIsMacOS] = useState<boolean>(false);
 	const [trashItemCount, setTrashItemCount] = useState<number>(0);
 
@@ -100,8 +99,6 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 	useEffect(() => {
 		const initializeSidebar = async () => {
 			try {
-				setIsLoading(true);
-
 				const currentPlatform = platform();
 				const isMac = currentPlatform === 'macos';
 				setIsMacOS(isMac);
@@ -148,8 +145,6 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 				await checkTrashItems();
 			} catch (error) {
 				console.error('Failed to get home directory contents:', error);
-			} finally {
-				setIsLoading(false);
 			}
 		};
 

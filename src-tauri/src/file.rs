@@ -26,8 +26,13 @@ pub struct FileEntry {
 
 #[command]
 pub fn file_operation(source_path: &str, destination_path: &str, operation: FileOperation) -> Result<(), String> {
-    let source = Path::new(source_path);
-    let destination = Path::new(destination_path);
+    let source = PathBuf::from(source_path);
+
+    #[cfg(not(target_os = "macos"))]
+    let mut destination = PathBuf::from(destination_path);
+
+    #[cfg(target_os = "macos")]
+    let destination = PathBuf::from(destination_path);
 
     if !source.exists() {
         return Err(format!("Source does not exist: {}", source.display()));
@@ -39,19 +44,87 @@ pub fn file_operation(source_path: &str, destination_path: &str, operation: File
         }
     }
 
-    match operation {
-        FileOperation::Copy => {
-            if source.is_dir() {
-                copy_dir_all(source, destination).map_err(|e| e.to_string())?;
-            } else {
-                fs::copy(source, destination).map_err(|e| e.to_string())?;
+    #[cfg(target_os = "macos")]
+    {
+        let source_path_escaped = source_path.replace("\"", "\\\"");
+
+        let dst_path = Path::new(destination_path);
+
+        let dst_folder = dst_path
+            .parent()
+            .ok_or("Invalid destination path provided")?
+            .to_str()
+            .ok_or("Unable to convert destination folder to a string")?;
+
+        let dst_folder_escaped = dst_folder.replace("\"", "\\\"");
+
+        let dst_filename = dst_path.file_name().ok_or("Invalid destination file name provided")?.to_string_lossy().to_string();
+
+        let dst_filename_escaped = dst_filename.replace("\"", "\\\"");
+
+        let script = match operation {
+            FileOperation::Copy => {
+                format!(
+                    r#"
+tell application "Finder"
+    set sourceFile to (POSIX file "{}") as alias
+    set destinationFolder to (POSIX file "{}") as alias
+    set duplicateFile to duplicate sourceFile to destinationFolder with replacing
+    set name of duplicateFile to "{}"
+end tell
+                        "#,
+                    source_path_escaped, dst_folder_escaped, dst_filename_escaped
+                )
             }
-            Ok(())
+            FileOperation::Cut => format!(
+                r#"
+tell application "Finder"
+    set sourceFile to (POSIX file "{}") as alias
+    set destinationFolder to (POSIX file "{}") as alias
+    set movedFile to move sourceFile to destinationFolder
+    set name of movedFile to "{}"
+end tell
+                    "#,
+                source_path_escaped, dst_folder_escaped, dst_filename_escaped
+            ),
+        };
+
+        std::process::Command::new("osascript")
+            .arg("-e")
+            .arg(&script)
+            .output()
+            .map_err(|e| format!("Failed to execute osascript: {}", e))?;
+
+        return Ok(());
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        if source.is_dir() && destination.starts_with(&source) {
+            return Err(format!("Cannot copy directory '{}' around itself ('{}')", source.display(), destination.display()));
         }
 
-        FileOperation::Cut => {
-            fs::rename(source, destination).map_err(|e| e.to_string())?;
-            Ok(())
+        if source == destination {
+            let filename = source.file_stem().unwrap_or_default().to_string_lossy();
+            let extension = source.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default().to_string();
+            let new_filename = format!("{} copy{}", filename, extension);
+            destination = if let Some(parent) = source.parent() { parent.join(new_filename) } else { new_filename.into() };
+        }
+
+        match operation {
+            FileOperation::Copy => {
+                if source.is_dir() {
+                    copy_dir_all(&source, &destination).map_err(|e| e.to_string())?;
+                } else {
+                    fs::copy(&source, &destination).map_err(|e| e.to_string())?;
+                }
+                Ok(())
+            }
+
+            FileOperation::Cut => {
+                fs::rename(&source, &destination).map_err(|e| e.to_string())?;
+                Ok(())
+            }
         }
     }
 }
@@ -333,8 +406,10 @@ pub async fn restore_from_trash(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(target_os = "macos")]
 fn get_macos_trash_path() -> Option<std::path::PathBuf> { dirs::home_dir().map(|home| home.join(".Trash")) }
 
+#[cfg(not(target_os = "macos"))]
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     fs::create_dir_all(dst)?;
 
