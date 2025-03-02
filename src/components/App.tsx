@@ -113,6 +113,7 @@ function App() {
 					{!showTrash ? (
 						<>
 							<Navbar
+								data-tauri-drag-region
 								currentPath={currentPath}
 								onBack={goBack}
 								onForward={goForward}

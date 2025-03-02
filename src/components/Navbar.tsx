@@ -17,7 +17,7 @@ export function Navbar({ currentPath, onBack, onForward, onNavigateUp, canGoBack
 	};
 
 	return (
-		<div className="flex items-center p-1.5 bg-gray-200 border-b border-gray-400 cursor-default">
+		<div data-tauri-drag-region className="flex items-center p-1.5 bg-gray-200 border-b border-gray-400 cursor-default">
 			<div className="flex items-center">
 				<button
 					onClick={onBack}

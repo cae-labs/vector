@@ -5,6 +5,7 @@ import { FileItem } from '@/components/FileItem';
 import { ContextMenu } from '@/components/ContextMenu';
 import { StatusBar } from '@/components/StatusBar';
 import { FileEntry } from '@/hooks/useFileSystem';
+import { platform } from '@tauri-apps/plugin-os';
 
 interface FileListProps {
 	files: FileEntry[];
@@ -283,7 +284,7 @@ export function FileList({
 				)}
 			</div>
 
-			<StatusBar files={files} currentPath={currentPath} showHidden={showHidden} />
+			<StatusBar files={files} currentPath={currentPath} />
 		</div>
 	);
 }

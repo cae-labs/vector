@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { FileEntry } from '@/hooks/useFileSystem';
 import { ContextMenuLocation } from '@/types';
+import { KeybindBadge } from '@/components/Badge';
+import { platform } from '@tauri-apps/plugin-os';
 
 interface ContextMenuProps {
 	x: number;
@@ -46,6 +48,11 @@ export function ContextMenu({
 	permanentlyDelete
 }: ContextMenuProps) {
 	const menuRef = useRef<HTMLDivElement>(null);
+	const [isMacOS, setIsMacOS] = useState(false);
+
+	useEffect(() => {
+		setIsMacOS(platform() === 'macos');
+	}, []);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -116,8 +123,8 @@ export function ContextMenu({
 											onCopy(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100">
-										Copy
+										className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+										Copy <KeybindBadge>{isMacOS ? '⌘C' : 'Ctrl+C'}</KeybindBadge>
 									</button>
 								</li>
 								<li>
@@ -126,8 +133,8 @@ export function ContextMenu({
 											onCut(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100">
-										Cut
+										className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+										Cut <KeybindBadge>{isMacOS ? '⌘X' : 'Ctrl+X'}</KeybindBadge>
 									</button>
 								</li>
 								<li className="border-t border-gray-200">
@@ -146,8 +153,9 @@ export function ContextMenu({
 											onDelete(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
-										Move to Trash
+										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex justify-between items-center">
+										<span>Move to Trash</span>
+										<KeybindBadge>{isMacOS ? '⌘⌫' : 'Delete'}</KeybindBadge>
 									</button>
 								</li>
 							</>
@@ -176,8 +184,8 @@ export function ContextMenu({
 									onCreateFile();
 									onClose();
 								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100">
-								New File
+								className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+								New File <KeybindBadge>{isMacOS ? '⌘N' : 'Ctrl+N'}</KeybindBadge>
 							</button>
 						</li>
 						<li>
@@ -186,8 +194,8 @@ export function ContextMenu({
 									onCreateFolder();
 									onClose();
 								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100">
-								New Folder
+								className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+								New Folder <KeybindBadge>{isMacOS ? '⌘⇧N' : 'Ctrl+⇧+N'}</KeybindBadge>
 							</button>
 						</li>
 					</>
@@ -201,7 +209,7 @@ export function ContextMenu({
 								onClose();
 							}}
 							className="w-full text-left px-4 py-2 hover:bg-gray-100">
-							Paste
+							Paste <KeybindBadge>{isMacOS ? '⌘V' : 'Ctrl+V'}</KeybindBadge>
 						</button>
 					</li>
 				)}
@@ -221,8 +229,8 @@ export function ContextMenu({
 								onToggleHidden();
 								onClose();
 							}}
-							className="w-full text-left px-4 py-2 hover:bg-gray-100">
-							{showHidden ? 'Hide hidden files' : 'Show hidden files'}
+							className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+							{showHidden ? 'Hide hidden files' : 'Show hidden files'} <KeybindBadge>{isMacOS ? '⌘+H' : 'Ctrl+H'}</KeybindBadge>
 						</button>
 					</li>
 				)}

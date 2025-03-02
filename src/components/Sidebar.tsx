@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ContextMenu } from '@/components/ContextMenu';
 import { ContextMenuLocation } from '@/types';
 import { FileEntry } from '@/hooks/useFileSystem';
 
 import { platform } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 interface SidebarProps {
 	onNavigate: (path: string) => void;
@@ -37,7 +38,11 @@ const COMMON_FOLDERS = [
 
 export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, trashUpdateKey }: SidebarProps) {
 	const [isMacOS, setIsMacOS] = useState<boolean>(false);
+	const [isFullscreen, setFullScreen] = useState<boolean>(false);
 	const [trashItemCount, setTrashItemCount] = useState<number>(0);
+
+	const [showHeaderBorder, setShowHeaderBorder] = useState<boolean>(false);
+	const contentRef = useRef<HTMLDivElement>(null);
 
 	const [homeDir, setHomeDir] = useState<string>('');
 	const [userFolders, setUserFolders] = useState<UserFolder[]>([]);
@@ -95,6 +100,42 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 			setTrashItemCount(0);
 		}
 	};
+
+	useEffect(() => {
+		let unlisten;
+
+		const setupResizeListener = async () => {
+			unlisten = await getCurrentWindow().onResized(async ({ payload: size }) => {
+				const fullscreen = await getCurrentWindow().isFullscreen();
+				setFullScreen(fullscreen);
+			});
+		};
+
+		setupResizeListener();
+
+		return () => {
+			if (unlisten) unlisten();
+		};
+	}, []);
+
+	useEffect(() => {
+		const handleScroll = () => {
+			if (contentRef.current) {
+				setShowHeaderBorder(contentRef.current.scrollTop > 0);
+			}
+		};
+
+		const contentElement = contentRef.current;
+		if (contentElement) {
+			contentElement.addEventListener('scroll', handleScroll);
+		}
+
+		return () => {
+			if (contentElement) {
+				contentElement.removeEventListener('scroll', handleScroll);
+			}
+		};
+	}, []);
 
 	useEffect(() => {
 		const initializeSidebar = async () => {
@@ -159,8 +200,15 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 
 	return (
 		<div className="w-48 bg-gray-200 border-r border-gray-400 flex flex-col overflow-hidden cursor-default">
-			<div className="flex-1 overflow-y-auto p-2 space-y-1">
-				<div className="mb-4">
+			<div
+				data-tauri-drag-region
+				className={
+					!isFullscreen
+						? `h-[47px] w-48 left-0 top-0 fixed bg-gray-200/70 backdrop-blur-md border-r border-gray-400 ${showHeaderBorder ? 'border-b border-gray-400' : ''}`
+						: ''
+				}></div>
+			<div ref={contentRef} className="flex-1 overflow-y-auto p-2 space-y-1 ">
+				<div className={isMacOS && !isFullscreen ? 'mb-4 mt-11' : 'mb-4'}>
 					<div className="px-2 mb-2 text-xs font-medium text-gray-500">Favorites</div>
 					{displayFolders.map((folder) => (
 						<button
@@ -226,7 +274,7 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 							<span>
 								Trash
 								{trashItemCount > 0 && (
-									<span className="inline-flex items-center justify-center w-4 h-4 ms-2 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">
+									<span className="inline-flex items-center justify-center w-4 h-4 ms-2 text-xs font-semibold text-gray-800 bg-gray-300 rounded-full">
 										{trashItemCount}
 									</span>
 								)}

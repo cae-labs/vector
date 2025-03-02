@@ -1,1 +1,0 @@
-jump to select file or folder on creation, do the same thing with pasting as well

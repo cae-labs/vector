@@ -125,7 +125,7 @@ export function TrashList({ files, restoreFromTrash, permanentlyDelete, showHidd
 				)}
 			</div>
 
-			<StatusBar files={files} currentPath={'internal:trash'} showHidden={showHidden} />
+			<StatusBar files={files} currentPath={'internal:trash'} />
 		</div>
 	);
 }

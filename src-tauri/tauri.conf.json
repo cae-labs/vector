@@ -14,8 +14,10 @@
 		"windows": [
 			{
 				"title": "vector",
-				"minWidth": 1000,
-				"minHeight": 600
+				"minWidth": 500,
+				"minHeight": 300,
+				"hiddenTitle": true,
+				"titleBarStyle": "Overlay"
 			}
 		],
 		"security": {

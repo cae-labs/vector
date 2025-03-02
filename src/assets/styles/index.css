@@ -6,3 +6,7 @@
 	user-select: none;
 	overscroll-behavior: none;
 }
+
+div[data-tauri-decorum-tb] {
+	height: 10px !important;
+}
