@@ -89,6 +89,14 @@ export function FileList({
 	const fileListContainerRef = useRef<HTMLDivElement>(null);
 	const fileItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+	const [isDragging, setIsDragging] = useState(false);
+	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+	const [dragCurrent, setDragCurrent] = useState({ x: 0, y: 0 });
+	const [initialScrollTop, setInitialScrollTop] = useState(0);
+	const dragSelectionRef = useRef<HTMLDivElement>(null);
+	const filePositionsRef = useRef<Map<string, DOMRect>>(new Map());
+	const [isCtrlDrag, setIsCtrlDrag] = useState(false);
+
 	const [zoomLevel, setZoomLevel] = useState<number>(1.05);
 	const [renamingFile, setRenamingFile] = useState<string | null>(null);
 	const [newFileName, setNewFileName] = useState<string>('');
@@ -660,6 +668,141 @@ export function FileList({
 		return result;
 	};
 
+	const handleMouseDown = (e: MouseEvent) => {
+		if (e.button !== 0 || e.target !== e.currentTarget) return;
+
+		setIsCtrlDrag(isMacOS ? e.metaKey : e.ctrlKey);
+
+		const container = fileListContainerRef.current;
+		if (!container) return;
+
+		setInitialScrollTop(container.scrollTop);
+		captureFilePositions();
+		setIsDragging(true);
+
+		const rect = container.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top + container.scrollTop;
+		setDragStart({ x, y });
+		setDragCurrent({ x, y });
+
+		e.preventDefault();
+	};
+
+	const handleMouseMove = (e: MouseEvent) => {
+		if (!isDragging || !fileListContainerRef.current) return;
+
+		const container = fileListContainerRef.current;
+		const rect = container.getBoundingClientRect();
+
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top + container.scrollTop;
+		setDragCurrent({ x, y });
+
+		const SCROLL_MARGIN = 50;
+		const SCROLL_SPEED = 15;
+
+		if (e.clientY - rect.top < SCROLL_MARGIN) {
+			container.scrollTop = Math.max(0, container.scrollTop - SCROLL_SPEED);
+		} else if (rect.bottom - e.clientY < SCROLL_MARGIN) {
+			container.scrollTop = Math.min(container.scrollHeight - container.clientHeight, container.scrollTop + SCROLL_SPEED);
+		}
+
+		updateDragSelection();
+	};
+
+	const handleMouseUp = () => {
+		if (!isDragging) return;
+		setIsDragging(false);
+		updateDragSelection();
+	};
+
+	const captureFilePositions = () => {
+		filePositionsRef.current.clear();
+		files.forEach((file) => {
+			const fileElement = fileItemRefs.current.get(file.path);
+			if (fileElement) {
+				filePositionsRef.current.set(file.path, fileElement.getBoundingClientRect());
+			}
+		});
+	};
+
+	const updateDragSelection = () => {
+		if (!isDragging || !fileListContainerRef.current) return;
+
+		const container = fileListContainerRef.current;
+		const containerRect = container.getBoundingClientRect();
+
+		const left = Math.min(dragStart.x, dragCurrent.x);
+		const top = Math.min(dragStart.y, dragCurrent.y);
+		const right = Math.max(dragStart.x, dragCurrent.x);
+		const bottom = Math.max(dragStart.y, dragCurrent.y);
+
+		const scrollDelta = container.scrollTop - initialScrollTop;
+		const topWithScroll = top - scrollDelta;
+		const bottomWithScroll = bottom - scrollDelta;
+
+		const filesInSelection: FileEntry[] = [];
+		const pathsInSelection: string[] = [];
+
+		files.forEach((file) => {
+			const fileRect = filePositionsRef.current.get(file.path);
+			if (!fileRect) return;
+
+			const fileTop = fileRect.top - containerRect.top;
+			const fileBottom = fileRect.bottom - containerRect.top;
+
+			const intersects =
+				right >= fileRect.left - containerRect.left &&
+				left <= fileRect.right - containerRect.left &&
+				bottomWithScroll >= fileTop &&
+				topWithScroll <= fileBottom;
+
+			if (intersects) {
+				filesInSelection.push(file);
+				pathsInSelection.push(file.path);
+			}
+		});
+
+		if (isCtrlDrag) {
+			setSelectedFiles((prev) => {
+				const currentPaths = prev.map((f) => f.path);
+				const newFiles = [...prev];
+
+				filesInSelection.forEach((file) => {
+					if (!currentPaths.includes(file.path)) {
+						newFiles.push(file);
+					}
+				});
+
+				return newFiles;
+			});
+
+			setSelectedItems((prev) => {
+				const newPaths = [...prev];
+
+				pathsInSelection.forEach((path) => {
+					if (!newPaths.includes(path)) {
+						newPaths.push(path);
+					}
+				});
+
+				return newPaths;
+			});
+		} else {
+			console.log();
+			setSelectedFiles(filesInSelection);
+			setSelectedItems(pathsInSelection);
+		}
+
+		if (pathsInSelection.length > 0) {
+			const lastIdx = files.findIndex((f) => f.path === pathsInSelection[pathsInSelection.length - 1]);
+			if (lastIdx !== -1) {
+				setLastSelectedIndex(lastIdx);
+			}
+		}
+	};
+
 	const getScaledIconSize = (baseSize: number) => Math.round(baseSize * zoomLevel);
 
 	useEffect(() => {
@@ -777,6 +920,29 @@ export function FileList({
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [selectedItems, selectedFiles, files, canPaste, isMacOS, expandedFolders, sortedFiles]);
 
+	useEffect(() => {
+		const container = fileListContainerRef.current;
+		if (!container) return;
+
+		const handleGlobalMouseMove = (e: MouseEvent) => {
+			handleMouseMove(e);
+		};
+
+		const handleGlobalMouseUp = () => {
+			handleMouseUp();
+		};
+
+		if (isDragging) {
+			window.addEventListener('mousemove', handleGlobalMouseMove);
+			window.addEventListener('mouseup', handleGlobalMouseUp);
+		}
+
+		return () => {
+			window.removeEventListener('mousemove', handleGlobalMouseMove);
+			window.removeEventListener('mouseup', handleGlobalMouseUp);
+		};
+	}, [isDragging, dragStart, dragCurrent, initialScrollTop]);
+
 	return (
 		<div className="h-screen flex flex-col">
 			<div className="sticky top-0 flex p-1 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b-[1px] border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
@@ -794,6 +960,7 @@ export function FileList({
 			<div
 				ref={fileListContainerRef}
 				className="flex-1 overflow-auto relative pb-2"
+				onMouseDown={handleMouseDown}
 				onContextMenu={handleBackgroundContextMenu}
 				onClick={(e) => {
 					if (e.target === e.currentTarget) {
@@ -803,6 +970,19 @@ export function FileList({
 					}
 				}}
 				style={{ overflowY: contextMenu.visible ? 'hidden' : 'auto' }}>
+				{isDragging && (
+					<div
+						ref={dragSelectionRef}
+						className="absolute border border-blue-500 bg-blue-500/20 z-10 pointer-events-none"
+						style={{
+							left: Math.min(dragStart.x, dragCurrent.x),
+							top: Math.min(dragStart.y, dragCurrent.y) - fileListContainerRef.current!.scrollTop + initialScrollTop,
+							width: Math.abs(dragCurrent.x - dragStart.x),
+							height: Math.abs(dragCurrent.y - dragStart.y)
+						}}
+					/>
+				)}
+
 				{creatingItem.type && (
 					<div
 						className={`cursor-default flex items-center border-b border-stone-300 dark:border-stone-700/50 bg-blue-100 dark:bg-[#0070FF]/20`}
