@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { Trash } from '@/components/Trash';
 import { Sidebar } from '@/components/Sidebar';
 import { Navbar } from '@/components/Navbar';
 import { FileList } from '@/components/FileList';
@@ -50,6 +51,7 @@ function App() {
 	} = useFileSystem();
 
 	const [isMacOS, setIsMacOS] = useState(false);
+	const [showTrash, setShowTrash] = useState(false);
 
 	useEffect(() => {
 		setIsMacOS(platform() === 'macos');
@@ -98,36 +100,42 @@ function App() {
 			{error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
 
 			<div className="flex flex-1 overflow-hidden">
-				<Sidebar onNavigate={readDirectory} showHidden={showHidden} onToggleHidden={toggleHiddenFiles} />
+				<Sidebar onNavigate={readDirectory} showHidden={showHidden} onToggleHidden={toggleHiddenFiles} setShowTrash={setShowTrash} />
 
 				<div className="flex-1 flex flex-col overflow-hidden">
-					<Navbar
-						currentPath={currentPath}
-						onBack={goBack}
-						onForward={goForward}
-						onNavigateUp={navigateUp}
-						canGoBack={canGoBack}
-						canGoForward={canGoForward}
-					/>
+					{!showTrash ? (
+						<>
+							<Navbar
+								currentPath={currentPath}
+								onBack={goBack}
+								onForward={goForward}
+								onNavigateUp={navigateUp}
+								canGoBack={canGoBack}
+								canGoForward={canGoForward}
+							/>
 
-					{isOutsideHomeDir && <WarningBanner message="You are browsing outside your home directory. System files may be sensitive." />}
+							{isOutsideHomeDir && <WarningBanner message="You are browsing outside your home directory. System files may be sensitive." />}
 
-					<FileList
-						files={files}
-						currentPath={currentPath}
-						onOpenFile={handleOpenFile}
-						onDeleteFile={deleteItem}
-						onRenameFile={renameItem}
-						onCopyFile={copyItem}
-						onCutFile={cutItem}
-						onPasteFiles={pasteItems}
-						onCreateFile={createFile}
-						onCreateDirectory={createDirectory}
-						canPaste={canPaste}
-						isLoading={isLoading}
-						showHidden={showHidden}
-						onToggleHidden={toggleHiddenFiles}
-					/>
+							<FileList
+								files={files}
+								currentPath={currentPath}
+								onOpenFile={handleOpenFile}
+								onDeleteFile={deleteItem}
+								onRenameFile={renameItem}
+								onCopyFile={copyItem}
+								onCutFile={cutItem}
+								onPasteFiles={pasteItems}
+								onCreateFile={createFile}
+								onCreateDirectory={createDirectory}
+								canPaste={canPaste}
+								isLoading={isLoading}
+								showHidden={showHidden}
+								onToggleHidden={toggleHiddenFiles}
+							/>
+						</>
+					) : (
+						<Trash onClose={() => setShowTrash(false)} />
+					)}
 				</div>
 			</div>
 

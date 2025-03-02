@@ -34,6 +34,8 @@ export function useFileSystem() {
 		path: null
 	});
 
+	const canPaste = !!clipboard.current.path;
+
 	const updateNavigationState = useCallback(() => {
 		setCanGoBack(historyIndexRef.current > 0);
 		setCanGoForward(historyIndexRef.current < historyRef.current.length - 1);
@@ -159,7 +161,7 @@ export function useFileSystem() {
 	const deleteItem = useCallback(
 		async (path: string) => {
 			try {
-				await invoke('delete_item', { path });
+				await invoke('move_to_trash', { path });
 				loadDirectory(currentPath);
 			} catch (err) {
 				setError(err as string);
@@ -230,8 +232,6 @@ export function useFileSystem() {
 			setError(err as string);
 		}
 	}, [currentPath, loadDirectory]);
-
-	const canPaste = !!clipboard.current.path;
 
 	return {
 		currentPath,

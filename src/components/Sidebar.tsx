@@ -9,6 +9,15 @@ import { invoke } from '@tauri-apps/api/core';
 interface SidebarProps {
 	onNavigate: (path: string) => void;
 	showHidden: boolean;
+	onToggleHidden: () => void;
+	setShowTrash: (set: boolean) => void;
+}
+
+interface UserFolder {
+	name: string;
+	path: string;
+	icon: string;
+	isHidden: boolean;
 }
 
 const COMMON_FOLDERS = [
@@ -21,25 +30,18 @@ const COMMON_FOLDERS = [
 	{ name: 'Projects', icon: '📂' },
 	{ name: 'Library', icon: '📚' },
 	{ name: 'Public', icon: '👥' },
-	{ name: 'Public', icon: '👥' },
 	{ name: '.config', icon: '⚙️' },
 	{ name: '.local', icon: '📦' }
 ];
 
-interface UserFolder {
-	name: string;
-	path: string;
-	icon: string;
-	isHidden: boolean;
-}
-
-export function Sidebar({ onNavigate, showHidden, onToggleHidden }: SidebarProps) {
+export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash }: SidebarProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isMacOS, setIsMacOS] = useState<boolean>(false);
 
 	const [homeDir, setHomeDir] = useState<string>('');
 	const [userFolders, setUserFolders] = useState<UserFolder[]>([]);
 	const [drives, setDrives] = useState<string[]>([]);
+	const [recents, setRecents] = useState<[]>([]);
 
 	const [contextMenu, setContextMenu] = useState<{
 		visible: boolean;
@@ -144,59 +146,73 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden }: SidebarProps
 	const displayFolders = userFolders.filter((folder) => showHidden || !folder.isHidden);
 
 	return (
-		<div className="cursor-default w-48 flex-shrink-0 bg-gray-100 border-r overflow-y-auto">
-			<div className="p-3">
-				<h2 className="font-bold text-gray-700 mb-2">Favorites</h2>
-
-				{isLoading ? (
-					<div className="flex justify-center py-4">
-						<div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-					</div>
-				) : (
-					<ul>
-						{displayFolders.map((folder) => (
-							<li key={folder.path}>
-								<button
-									onClick={() => onNavigate(folder.path)}
-									onContextMenu={(e) => handleContextMenu(e, folder)}
-									className={`w-full text-left p-2 hover:bg-gray-200 rounded flex items-center 
-					  ${folder.isHidden ? 'text-gray-500 italic opacity-60' : ''}`}>
-									<span className="mr-2">{folder.icon}</span>
-									{folder.name}
-								</button>
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
-
-			<div className="p-3 border-t">
-				<h2 className="font-bold text-gray-700 mb-2">Recent Files</h2>
-				<p className="text-sm text-gray-500 italic">Coming soon</p>
-			</div>
-
-			{drives.length > 0 && (
-				<div className="p-3">
-					<h2 className="font-bold text-gray-700 mb-2">Drives</h2>
-					<ul>
-						{drives.map((drive) => (
-							<li key={drive}>
-								<button onClick={() => onNavigate(drive)} className="w-full text-left p-2 hover:bg-gray-200 rounded flex items-center">
-									<span className="mr-2">💾</span> {drive}
-								</button>
-							</li>
-						))}
-					</ul>
+		<div className="w-48 bg-gray-50 border-r flex flex-col overflow-hidden cursor-default">
+			<div className="flex-1 overflow-y-auto p-2 space-y-1">
+				<div className="mb-4">
+					<div className="px-2 mb-2 text-xs font-medium text-gray-500">Favorites</div>
+					{displayFolders.map((folder) => (
+						<button
+							key={folder.path}
+							onClick={() => {
+								setShowTrash(false);
+								onNavigate(folder.path);
+							}}
+							onContextMenu={(e) => handleContextMenu(e, folder)}
+							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
+							<span className="text-gray-400">{folder.icon}</span>
+							<span>{folder.name}</span>
+						</button>
+					))}
 				</div>
-			)}
 
-			<div className="p-3 border-t">
-				<h2 className="font-bold text-gray-700 mb-2">Future Features</h2>
-				<ul className="text-sm text-gray-600">
-					<li className="pl-2 py-1">🔍 AI Search</li>
-					<li className="pl-2 py-1">🔄 AI Sort</li>
-					<li className="pl-2 py-1">📊 Directory Summary</li>
-				</ul>
+				<div className="mb-4">
+					<div className="px-2 mb-2 text-xs font-medium text-gray-500">Recents</div>
+					{recents.length > 0 ? (
+						recents.map((file) => (
+							<button
+								key={file.path}
+								onClick={() => {
+									setShowTrash(false);
+									onNavigate(file.path);
+								}}
+								onContextMenu={() => {}}
+								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
+								<span className="text-gray-400">{file.icon}</span>
+								<span>{file.name}</span>
+							</button>
+						))
+					) : (
+						<div className="px-2 py-1 text-xs text-gray-400">No recent files</div>
+					)}
+				</div>
+
+				{drives.length > 0 && (
+					<div className="mb-4">
+						<div className="px-2 mb-2 text-xs font-medium text-gray-500">Drives</div>
+						{drives.map((drive) => (
+							<button
+								key={drive}
+								onClick={() => {
+									setShowTrash(false);
+									onNavigate(drive);
+								}}
+								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
+								<span className="text-gray-400">💾</span>
+								<span>{drive}</span>
+							</button>
+						))}
+					</div>
+				)}
+
+				<div>
+					<div className="px-2 mb-2 text-xs font-medium text-gray-500">System</div>
+					<button
+						onClick={() => setShowTrash(true)}
+						className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
+						<span className="text-gray-400">🗑️</span>
+						<span>Trash</span>
+					</button>
+				</div>
 			</div>
 
 			{contextMenu.visible && (

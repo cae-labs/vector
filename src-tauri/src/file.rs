@@ -115,7 +115,6 @@ pub fn read_directory(path: &str, show_hidden: bool) -> Result<Vec<FileEntry>, S
         });
     }
 
-    // Sort directories first, then by name
     file_entries.sort_by(|a, b| match (a.is_dir, b.is_dir) {
         (true, false) => std::cmp::Ordering::Less,
         (false, true) => std::cmp::Ordering::Greater,
@@ -124,6 +123,7 @@ pub fn read_directory(path: &str, show_hidden: bool) -> Result<Vec<FileEntry>, S
 
     Ok(file_entries)
 }
+
 #[command]
 pub fn get_parent_directory(path: &str) -> Result<String, String> {
     let path_buf = PathBuf::from(path);
@@ -148,15 +148,7 @@ pub fn create_file(path: &str, name: &str) -> Result<(), String> {
 }
 
 #[command]
-pub fn delete_item(path: &str) -> Result<(), String> {
-    let path = Path::new(path);
-
-    if path.is_dir() {
-        fs::remove_dir_all(path).map_err(|e| e.to_string())
-    } else {
-        fs::remove_file(path).map_err(|e| e.to_string())
-    }
-}
+pub fn move_to_trash(path: &str) -> Result<(), String> { trash::delete(path).map_err(|e| e.to_string()) }
 
 #[command]
 pub fn rename_item(path: &str, new_name: &str) -> Result<String, String> {
@@ -184,36 +176,148 @@ pub fn is_within_home_directory(path: &str) -> Result<bool, String> {
     Ok(path.starts_with(&home))
 }
 
+#[cfg(target_os = "windows")]
 #[command]
 pub fn get_drives() -> Result<Vec<String>, String> {
-    #[cfg(target_os = "windows")]
-    {
-        use std::process::Command;
+    use std::process::Command;
 
-        let output = Command::new("wmic").args(["logicaldisk", "get", "caption"]).output().map_err(|e| e.to_string())?;
+    let output = Command::new("wmic").args(["logicaldisk", "get", "caption"]).output().map_err(|e| e.to_string())?;
 
-        let output_str = String::from_utf8_lossy(&output.stdout);
-        let drives: Vec<String> = output_str
-            .lines()
-            .skip(1) // Skip the header line
-            .filter_map(|line| {
-                let drive = line.trim();
-                if !drive.is_empty() {
-                    Some(format!("{}\\", drive))
-                } else {
-                    None
-                }
-            })
-            .collect();
+    let output_str = String::from_utf8_lossy(&output.stdout);
+    let drives: Vec<String> = output_str
+        .lines()
+        .skip(1)
+        .filter_map(|line| {
+            let drive = line.trim();
+            if !drive.is_empty() {
+                Some(format!("{}\\", drive))
+            } else {
+                None
+            }
+        })
+        .collect();
 
-        Ok(drives)
+    Ok(drives)
+}
+
+#[cfg(not(target_os = "windows"))]
+#[command]
+pub fn get_drives() -> Result<Vec<String>, String> {
+    // improve and show all drives
+    Ok(vec!["/".to_string()])
+}
+
+#[cfg(target_os = "macos")]
+#[command]
+pub async fn get_trash_items() -> Result<Vec<FileEntry>, String> {
+    let trash_path = get_macos_trash_path().ok_or_else(|| "Could not determine trash path".to_string())?;
+
+    let mut entries = Vec::new();
+    let dir_entries = fs::read_dir(&trash_path).map_err(|e| format!("Failed to read trash directory: {}", e))?;
+
+    for entry in dir_entries {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let path = entry.path();
+        let metadata = entry.metadata().map_err(|e| format!("Failed to read metadata: {}", e))?;
+
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("Unknown").to_string();
+
+        let modified = metadata
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs().to_string())
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        entries.push(FileEntry {
+            modified,
+            name: name.clone(),
+            path: path.to_string_lossy().to_string(),
+            is_dir: metadata.is_dir(),
+            size: metadata.len(),
+            file_type: if metadata.is_dir() { "directory".to_string() } else { "file".to_string() },
+            is_hidden: name.starts_with('.'),
+        });
     }
 
-    #[cfg(not(target_os = "windows"))]
-    {
-        Ok(vec!["/".to_string()])
+    Ok(entries)
+}
+
+#[cfg(not(target_os = "macos"))]
+#[command]
+pub async fn get_trash_items() -> Result<Vec<FileEntry>, String> {
+    let trash_dir = trash::os_limited::list().map_err(|e| e.to_string())?;
+
+    let mut entries = Vec::new();
+    for item in trash_dir {
+        let path = item.id.display().to_string();
+        let name = item.name.unwrap_or_else(|| path.clone());
+        let metadata = match std::fs::metadata(&path) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+
+        let modified = metadata
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs().to_string())
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        entries.push(FileEntry {
+            name,
+            path,
+            is_dir: metadata.is_dir(),
+            size: metadata.len(),
+            modified,
+            file_type: if metadata.is_dir() { "directory".to_string() } else { "file".to_string() },
+            is_hidden: false,
+        });
+    }
+
+    Ok(entries)
+}
+
+#[cfg(target_os = "macos")]
+#[command]
+pub async fn restore_from_trash(path: &str) -> Result<(), String> {
+    let trash_path = get_macos_trash_path().ok_or_else(|| "Could not determine trash path".to_string())?;
+
+    let path = Path::new(path);
+    if !path.starts_with(&trash_path) {
+        return Err("File is not in trash".to_string());
+    }
+
+    if let Some(file_name) = path.file_name() {
+        let home = dirs::home_dir().ok_or_else(|| "Could not determine home directory".to_string())?;
+        let dest = home.join(file_name);
+
+        if dest.exists() {
+            return Err("A file with this name already exists in the destination".to_string());
+        }
+
+        fs::rename(path, &dest).map_err(|e| format!("Failed to restore file: {}", e))?;
+
+        Ok(())
+    } else {
+        Err("Invalid file path".to_string())
     }
 }
+
+#[cfg(not(target_os = "macos"))]
+#[command]
+pub async fn restore_from_trash(path: &str) -> Result<(), String> {
+    let path = Path::new(path);
+    if let Some(file_name) = path.file_name() {
+        let dest = Path::new("/").join(file_name);
+        if let Err(e) = std::fs::rename(path, dest) {
+            return Err(format!("Failed to restore file: {}", e));
+        }
+    }
+    Ok(())
+}
+
+fn get_macos_trash_path() -> Option<std::path::PathBuf> { dirs::home_dir().map(|home| home.join(".Trash")) }
 
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     fs::create_dir_all(dst)?;
