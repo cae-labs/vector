@@ -26,6 +26,7 @@ interface FileListProps {
 	permanentlyDelete?: (path: string) => void;
 	newlyCreatedPath?: string | null;
 	clearNewlyCreatedPath?: () => void;
+	onNavigate: (path: string) => void;
 }
 
 export function FileList({
@@ -46,7 +47,8 @@ export function FileList({
 	restoreFromTrash,
 	permanentlyDelete,
 	newlyCreatedPath,
-	clearNewlyCreatedPath
+	clearNewlyCreatedPath,
+	onNavigate
 }: FileListProps) {
 	const [contextMenu, setContextMenu] = useState<{
 		visible: boolean;
@@ -333,7 +335,7 @@ export function FileList({
 				)}
 			</div>
 
-			<StatusBar files={files} currentPath={currentPath} />
+			<StatusBar files={files} currentPath={currentPath} onNavigate={onNavigate} />
 		</div>
 	);
 }

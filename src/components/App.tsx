@@ -150,6 +150,7 @@ function App() {
 								onRenameFile={renameItem}
 								onCopyFile={copyItem}
 								onCutFile={cutItem}
+								onNavigate={readDirectory}
 								onPasteFiles={pasteItems}
 								onCreateFile={createFile}
 								onCreateDirectory={createDirectory}
