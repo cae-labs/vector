@@ -20,6 +20,10 @@ export enum SortOption {
 	SIZE_DESC = 'size_desc'
 }
 
+const MIN_ZOOM = 0.95;
+const MAX_ZOOM = 1.5;
+const ZOOM_STEP = 0.1;
+
 interface FileListProps {
 	files: FileEntry[];
 	currentPath: string;
@@ -83,6 +87,7 @@ export function FileList({
 	const fileListContainerRef = useRef<HTMLDivElement>(null);
 	const fileItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+	const [zoomLevel, setZoomLevel] = useState<number>(1.05);
 	const [renamingFile, setRenamingFile] = useState<string | null>(null);
 	const [newFileName, setNewFileName] = useState<string>('');
 
@@ -102,6 +107,11 @@ export function FileList({
 			try {
 				const store = await storePromise;
 				setStoreInstance(store);
+
+				const savedZoom = await store.get('zoom-level');
+				if (savedZoom) {
+					setZoomLevel(savedZoom);
+				}
 			} catch (error) {
 				console.error('Failed to initialize store:', error);
 			}
@@ -109,6 +119,21 @@ export function FileList({
 
 		initStore();
 	}, []);
+
+	useEffect(() => {
+		if (!storeInstance) return;
+
+		const saveZoomLevel = async () => {
+			try {
+				await storeInstance.set('zoom-level', zoomLevel);
+				await storeInstance.save();
+			} catch (error) {
+				console.error('Failed to save zoom level:', error);
+			}
+		};
+
+		saveZoomLevel();
+	}, [zoomLevel, storeInstance]);
 
 	useEffect(() => {
 		if (!storeInstance || !currentPath) return;
@@ -187,6 +212,18 @@ export function FileList({
 
 	const handleSortChange = (option: SortOption) => {
 		setSortOption(option);
+	};
+
+	const increaseZoom = () => {
+		setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
+	};
+
+	const decreaseZoom = () => {
+		setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+	};
+
+	const resetZoom = () => {
+		setZoomLevel(1.05);
 	};
 
 	const getSortIndicator = (baseSortType: string) => {
@@ -319,6 +356,7 @@ export function FileList({
 							}
 						}
 						break;
+
 					case 'c':
 						if (selectedItem) {
 							event.preventDefault();
@@ -326,6 +364,7 @@ export function FileList({
 							if (selectedFile) onCopyFile(selectedFile.path);
 						}
 						break;
+
 					case 'x':
 						if (selectedItem) {
 							event.preventDefault();
@@ -333,18 +372,21 @@ export function FileList({
 							if (selectedFile) onCutFile(selectedFile.path);
 						}
 						break;
+
 					case 'v':
 						if (canPaste) {
 							event.preventDefault();
 							onPasteFiles();
 						}
 						break;
+
 					case 'r':
 						if (selectedFile) {
 							event.preventDefault();
 							startRenaming(selectedFile);
 						}
 						break;
+
 					case 'n':
 						if (event.shiftKey) {
 							event.preventDefault();
@@ -352,6 +394,27 @@ export function FileList({
 						} else {
 							event.preventDefault();
 							handleCreateFile();
+						}
+						break;
+
+					case '=':
+						if (cmdOrCtrl) {
+							event.preventDefault();
+							increaseZoom();
+						}
+						break;
+
+					case '-':
+						if (cmdOrCtrl) {
+							event.preventDefault();
+							decreaseZoom();
+						}
+						break;
+
+					case '0':
+						if (cmdOrCtrl) {
+							event.preventDefault();
+							resetZoom();
 						}
 						break;
 				}
@@ -401,6 +464,13 @@ export function FileList({
 	}, [contextMenu.visible]);
 
 	const sortedFiles = getSortedFiles();
+
+	const zoomStyles = {
+		fontSize: `${zoomLevel}rem`,
+		transition: 'font-size 0.2s ease'
+	};
+
+	const getScaledIconSize = (baseSize: number) => Math.round(baseSize * zoomLevel);
 
 	return (
 		<div className="h-screen flex flex-col">
@@ -469,6 +539,8 @@ export function FileList({
 								setNewName={setNewFileName}
 								onSaveRename={saveRename}
 								onCancelRename={cancelRename}
+								zoomLevel={zoomLevel}
+								iconSize={getScaledIconSize(16)}
 							/>
 						</div>
 					))

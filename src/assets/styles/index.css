@@ -10,3 +10,15 @@
 div[data-tauri-decorum-tb] {
 	height: 10px !important;
 }
+
+@keyframes launch-app-ping {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	75%,
+	100% {
+		transform: scale(3);
+		opacity: 0;
+	}
+}
