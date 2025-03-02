@@ -85,7 +85,7 @@ export function FileItem({
 
 	return (
 		<div
-			className={`cursor-default flex items-center p-2 border-b ${isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'} ${file.is_hidden ? 'opacity-60' : ''}`}
+			className={`cursor-default flex items-center p-2 border-b ${isSelected && 'bg-blue-100'}`}
 			onContextMenu={(e) => onContextMenu(e, file)}
 			onClick={() => onSelect(file)}
 			onDoubleClick={() => onOpen(file)}>
@@ -113,7 +113,7 @@ export function FileItem({
 				</div>
 			) : (
 				<>
-					<div className={`flex-1 ${file.is_hidden ? 'text-gray-500 italic' : ''}`}>{displayName()}</div>
+					<div className={`flex-1 ${file.is_hidden ? 'text-gray-400 italic' : ''}`}>{displayName()}</div>
 					<div className="text-gray-500 text-sm mr-4 hidden md:block">{file.modified}</div>
 					<div className="text-gray-500 text-sm w-20 text-right">{file.is_dir ? '--' : formatFileSize(file.size)}</div>
 				</>

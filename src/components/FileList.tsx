@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileItem } from './FileItem';
 import { ContextMenu } from './ContextMenu';
 import { FileEntry } from '../hooks/useFileSystem';
@@ -67,6 +67,7 @@ export function FileList({
 	const handleFileContextMenu = (event: React.MouseEvent, file: FileEntry) => {
 		event.preventDefault();
 		event.stopPropagation();
+		setSelectedItem(file.path);
 		setContextMenu({
 			visible: true,
 			x: event.clientX,
@@ -139,6 +140,17 @@ export function FileList({
 		onOpenFile(file);
 	};
 
+	useEffect(() => {
+		if (contextMenu.visible) {
+			document.body.style.overflow = 'hidden';
+		} else {
+			document.body.style.overflow = '';
+		}
+		return () => {
+			document.body.style.overflow = '';
+		};
+	}, [contextMenu.visible]);
+
 	if (isLoading) {
 		return (
 			<div className="flex justify-center items-center h-full">
@@ -162,7 +174,8 @@ export function FileList({
 					if (e.target === e.currentTarget) {
 						setSelectedItem(null);
 					}
-				}}>
+				}}
+				style={{ overflowY: contextMenu.visible ? 'hidden' : 'auto' }}>
 				{creatingItem.type && (
 					<div className="flex items-center p-2 border-b bg-blue-50">
 						<div className="mr-2 text-xl">{creatingItem.type === 'file' ? '📄' : '📁'}</div>
