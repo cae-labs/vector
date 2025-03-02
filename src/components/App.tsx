@@ -5,23 +5,10 @@ import { Sidebar } from '@/components/Sidebar';
 import { Navbar } from '@/components/Navbar';
 import { FileList } from '@/components/FileList';
 import { WarningBanner } from '@/components/Banner';
-import { KeybindBadge } from '@/components/Badge';
 import { useFileSystem, FileEntry } from '@/hooks/useFileSystem';
 
 import { openPath } from '@tauri-apps/plugin-opener';
 import { platform } from '@tauri-apps/plugin-os';
-
-const FileManagerToggle = ({ showHidden, isMacOS }) => {
-	const keybind = isMacOS ? '⌘+H' : 'Ctrl+H';
-	const message = showHidden ? 'Showing hidden' : 'Hidden files not shown';
-
-	return (
-		<div className="flex items-center space-x-2">
-			<span>{message}</span>
-			<KeybindBadge>{keybind}</KeybindBadge>
-		</div>
-	);
-};
 
 function App() {
 	const {
@@ -149,21 +136,9 @@ function App() {
 							/>
 						</>
 					) : (
-						<Trash onTrashUpdate={() => setTrashUpdateKey((prev) => prev + 1)} />
+						<Trash onTrashUpdate={() => setTrashUpdateKey((prev) => prev + 1)} setShowTrash={setShowTrash} showHidden={showHidden} />
 					)}
 				</div>
-			</div>
-
-			<div className="cursor-default bg-gray-100 px-2.5 py-1.5 border-t text-xs text-gray-500 flex justify-between">
-				{/* make the currentPath navigateble  */}
-				<span>
-					{!showTrash && (
-						<span>
-							{files.length} items <span className="text-[10px] text-gray-400">{currentPath}</span>
-						</span>
-					)}
-				</span>
-				<FileManagerToggle showHidden={showHidden} isMacOS={isMacOS} />
 			</div>
 		</div>
 	);

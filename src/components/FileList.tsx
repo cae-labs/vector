@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { FileItem } from './FileItem';
-import { ContextMenu } from './ContextMenu';
-import { FileEntry } from '../hooks/useFileSystem';
-import { ContextMenuLocation } from '../types';
+import { useState, useEffect, MouseEvent } from 'react';
+import { ContextMenuLocation } from '@/types';
+
+import { FileItem } from '@/components/FileItem';
+import { ContextMenu } from '@/components/ContextMenu';
+import { StatusBar } from '@/components/StatusBar';
+import { FileEntry } from '@/hooks/useFileSystem';
 
 interface FileListProps {
 	files: FileEntry[];
@@ -64,7 +66,7 @@ export function FileList({
 		name: string;
 	}>({ type: null, name: '' });
 
-	const handleFileContextMenu = (event: React.MouseEvent, file: FileEntry) => {
+	const handleFileContextMenu = (event: MouseEvent, file: FileEntry) => {
 		event.preventDefault();
 		event.stopPropagation();
 		setSelectedItem(file.path);
@@ -77,7 +79,7 @@ export function FileList({
 		});
 	};
 
-	const handleBackgroundContextMenu = (event: React.MouseEvent) => {
+	const handleBackgroundContextMenu = (event: MouseEvent) => {
 		event.preventDefault();
 		setContextMenu({
 			visible: true,
@@ -152,7 +154,7 @@ export function FileList({
 	}, [contextMenu.visible]);
 
 	return (
-		<>
+		<div className="h-screen flex flex-col">
 			<div className="sticky top-0 flex p-2 bg-gray-200 font-bold border-b cursor-default">
 				<div className="w-8"></div>
 				<div className="flex-1">Name</div>
@@ -238,6 +240,8 @@ export function FileList({
 					/>
 				)}
 			</div>
-		</>
+
+			<StatusBar files={files} currentPath={currentPath} showHidden={showHidden} />
+		</div>
 	);
 }

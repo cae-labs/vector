@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { FileEntry } from '@/hooks/useFileSystem';
-import { FileList } from '@/components/FileList';
+import { TrashList } from '@/components/TrashList';
 import { invoke } from '@tauri-apps/api/core';
 
 interface TrashProps {
+	showHidden: boolean;
 	onTrashUpdate?: () => void;
+	setShowTrash: (show: boolean) => void;
 }
 
-export function Trash({ onTrashUpdate }: TrashProps) {
+export function Trash({ showHidden, onTrashUpdate, setShowTrash }: TrashProps) {
 	const [items, setItems] = useState<FileEntry[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -29,8 +31,14 @@ export function Trash({ onTrashUpdate }: TrashProps) {
 	const handleRestore = async (path: string) => {
 		try {
 			await invoke('restore_from_trash', { path });
+			const wasLastItem = items.length === 1;
+
 			await loadTrashItems();
 			onTrashUpdate?.();
+
+			if (wasLastItem) {
+				setShowTrash(false);
+			}
 		} catch (err) {
 			console.error(err);
 			setError(err instanceof Error ? err.message : 'Failed to restore item');
@@ -40,8 +48,14 @@ export function Trash({ onTrashUpdate }: TrashProps) {
 	const handlePermanentDelete = async (path: string) => {
 		try {
 			await invoke('delete_item', { path });
+			const wasLastItem = items.length === 1;
+
 			await loadTrashItems();
 			onTrashUpdate?.();
+
+			if (wasLastItem) {
+				setShowTrash(false);
+			}
 		} catch (err) {
 			console.error(err);
 			setError(err instanceof Error ? err.message : 'Failed to permanently delete item');
@@ -61,14 +75,12 @@ export function Trash({ onTrashUpdate }: TrashProps) {
 	}
 
 	return (
-		<div className="h-full">
-			<FileList
-				files={items}
-				restoreFromTrash={handleRestore}
-				permanentlyDelete={handlePermanentDelete}
-				showHidden={false}
-				onToggleHidden={() => {}}
-			/>
-		</div>
+		<TrashList
+			files={items}
+			restoreFromTrash={handleRestore}
+			permanentlyDelete={handlePermanentDelete}
+			showHidden={showHidden}
+			onToggleHidden={() => {}}
+		/>
 	);
 }
