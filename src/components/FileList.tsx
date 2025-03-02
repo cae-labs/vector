@@ -19,6 +19,8 @@ interface FileListProps {
 	isLoading: boolean;
 	showHidden: boolean;
 	onToggleHidden: () => void;
+	restoreFromTrash?: (path: string) => void;
+	permanentlyDelete?: (path: string) => void;
 }
 
 export function FileList({
@@ -35,7 +37,9 @@ export function FileList({
 	canPaste,
 	isLoading,
 	showHidden,
-	onToggleHidden
+	onToggleHidden,
+	restoreFromTrash,
+	permanentlyDelete
 }: FileListProps) {
 	const [contextMenu, setContextMenu] = useState<{
 		visible: boolean;
@@ -62,7 +66,7 @@ export function FileList({
 
 	const handleFileContextMenu = (event: React.MouseEvent, file: FileEntry) => {
 		event.preventDefault();
-		event.stopPropagation(); // prevent the background context menu from triggering
+		event.stopPropagation();
 		setContextMenu({
 			visible: true,
 			x: event.clientX,
@@ -224,6 +228,8 @@ export function FileList({
 						canPaste={canPaste}
 						showHidden={showHidden}
 						onToggleHidden={onToggleHidden}
+						restoreFromTrash={restoreFromTrash}
+						permanentlyDelete={permanentlyDelete}
 					/>
 				)}
 			</div>

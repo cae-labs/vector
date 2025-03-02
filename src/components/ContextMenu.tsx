@@ -20,6 +20,8 @@ interface ContextMenuProps {
 	canPaste: boolean;
 	showHidden: boolean;
 	onToggleHidden: () => void;
+	restoreFromTrash?: (path: string) => void;
+	permanentlyDelete?: (path: string) => void;
 }
 
 export function ContextMenu({
@@ -39,11 +41,12 @@ export function ContextMenu({
 	onPinUnpinFolder,
 	canPaste,
 	showHidden,
-	onToggleHidden
+	onToggleHidden,
+	restoreFromTrash,
+	permanentlyDelete
 }: ContextMenuProps) {
 	const menuRef = useRef<HTMLDivElement>(null);
 
-	// Close menu when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -57,7 +60,6 @@ export function ContextMenu({
 		};
 	}, [onClose]);
 
-	// Adjust position if menu would go off screen
 	useEffect(() => {
 		if (!menuRef.current) return;
 
@@ -83,56 +85,73 @@ export function ContextMenu({
 			<ul className="py-1">
 				{location === ContextMenuLocation.FILE_LIST && file && (
 					<>
-						<li>
-							<button
-								onClick={() => {
-									onOpen(file);
-									onClose();
-								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100">
-								{file.is_dir ? 'Open' : 'Open with default app'}
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => {
-									onCopy(file.path);
-									onClose();
-								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100">
-								Copy
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => {
-									onCut(file.path);
-									onClose();
-								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100">
-								Cut
-							</button>
-						</li>
-						<li className="border-t border-gray-200">
-							<button
-								onClick={() => {
-									onRename(file);
-									onClose();
-								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100">
-								Rename
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => {
-									onDelete(file.path);
-									onClose();
-								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
-								Delete
-							</button>
-						</li>
+						{restoreFromTrash ? (
+							<>
+								<li>
+									<button
+										onClick={() => {
+											restoreFromTrash(file.path);
+											onClose();
+										}}
+										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-600">
+										Restore
+									</button>
+								</li>
+								<li>
+									<button
+										onClick={() => {
+											permanentlyDelete?.(file.path);
+											onClose();
+										}}
+										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
+										Delete Permanently
+									</button>
+								</li>
+							</>
+						) : (
+							<>
+								<li>
+									<button
+										onClick={() => {
+											onCopy(file.path);
+											onClose();
+										}}
+										className="w-full text-left px-4 py-2 hover:bg-gray-100">
+										Copy
+									</button>
+								</li>
+								<li>
+									<button
+										onClick={() => {
+											onCut(file.path);
+											onClose();
+										}}
+										className="w-full text-left px-4 py-2 hover:bg-gray-100">
+										Cut
+									</button>
+								</li>
+								<li className="border-t border-gray-200">
+									<button
+										onClick={() => {
+											onRename(file);
+											onClose();
+										}}
+										className="w-full text-left px-4 py-2 hover:bg-gray-100">
+										Rename
+									</button>
+								</li>
+								<li>
+									<button
+										onClick={() => {
+											onDelete(file.path);
+											onClose();
+										}}
+										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
+										Delete
+									</button>
+								</li>
+							</>
+						)}
 					</>
 				)}
 
@@ -149,7 +168,7 @@ export function ContextMenu({
 					</li>
 				)}
 
-				{(location === ContextMenuLocation.FILE_LIST || location === ContextMenuLocation.EMPTY_SPACE) && (
+				{(location === ContextMenuLocation.FILE_LIST || location === ContextMenuLocation.EMPTY_SPACE) && !restoreFromTrash && (
 					<>
 						<li className={file && location === ContextMenuLocation.FILE_LIST ? 'border-t border-gray-200' : ''}>
 							<button
@@ -174,7 +193,7 @@ export function ContextMenu({
 					</>
 				)}
 
-				{location !== ContextMenuLocation.SIDEBAR && canPaste && (
+				{location !== ContextMenuLocation.SIDEBAR && canPaste && !restoreFromTrash && (
 					<li className="border-t border-gray-200">
 						<button
 							onClick={() => {
@@ -187,24 +206,26 @@ export function ContextMenu({
 					</li>
 				)}
 
-				<li
-					className={
-						(location === ContextMenuLocation.SIDEBAR && !file) ||
-						(location !== ContextMenuLocation.SIDEBAR &&
-							!canPaste &&
-							!(location === ContextMenuLocation.FILE_LIST || location === ContextMenuLocation.EMPTY_SPACE))
-							? ''
-							: 'border-t border-gray-200'
-					}>
-					<button
-						onClick={() => {
-							onToggleHidden();
-							onClose();
-						}}
-						className="w-full text-left px-4 py-2 hover:bg-gray-100">
-						{showHidden ? 'Hide hidden files' : 'Show hidden files'}
-					</button>
-				</li>
+				{!restoreFromTrash && (
+					<li
+						className={
+							(location === ContextMenuLocation.SIDEBAR && !file) ||
+							(location !== ContextMenuLocation.SIDEBAR &&
+								!canPaste &&
+								!(location === ContextMenuLocation.FILE_LIST || location === ContextMenuLocation.EMPTY_SPACE))
+								? ''
+								: 'border-t border-gray-200'
+						}>
+						<button
+							onClick={() => {
+								onToggleHidden();
+								onClose();
+							}}
+							className="w-full text-left px-4 py-2 hover:bg-gray-100">
+							{showHidden ? 'Hide hidden files' : 'Show hidden files'}
+						</button>
+					</li>
+				)}
 			</ul>
 		</div>
 	);
