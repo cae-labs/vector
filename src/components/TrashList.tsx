@@ -65,11 +65,11 @@ export function TrashList({ files, restoreFromTrash, permanentlyDelete, showHidd
 
 	return (
 		<div className="h-screen flex flex-col">
-			<div className="sticky top-0 flex p-2 bg-gray-200 font-bold border-b cursor-default">
-				<div className="w-8"></div>
+			<div className="sticky top-0 flex p-1.5 bg-stone-100 dark:bg-stone-800 font-bold border-b border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
+				<div className="w-11"></div>
 				<div className="flex-1">Name</div>
-				<div className="text-gray-700 mr-4 hidden md:block">Date Added</div>
-				<div className="w-20 text-right">Size</div>
+				<div className="mr-4 hidden md:block">Modified</div>
+				<div className="w-20 text-right mr-4">Size</div>
 			</div>
 			<div
 				className="flex-1 overflow-auto relative"
@@ -80,7 +80,7 @@ export function TrashList({ files, restoreFromTrash, permanentlyDelete, showHidd
 				}}
 				style={{ overflowY: contextMenu.visible ? 'hidden' : 'auto' }}>
 				{files.length === 0 ? (
-					<div className="flex justify-center items-center h-40 text-gray-500">Trash is empty</div>
+					<div className="flex justify-center items-center h-40 text-stone-500">Trash is empty</div>
 				) : (
 					files.map((file) => (
 						<FileItem

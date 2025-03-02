@@ -245,6 +245,7 @@ export function useFileSystem() {
 		files,
 		isLoading,
 		error,
+		setError,
 		showHidden,
 		readDirectory,
 		navigateUp,

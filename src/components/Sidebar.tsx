@@ -24,6 +24,7 @@ interface UserFolder {
 
 const COMMON_FOLDERS = [
 	{ name: 'Documents', icon: '📄' },
+	{ name: 'Developer', icon: '🛠️' },
 	{ name: 'Downloads', icon: '⬇️' },
 	{ name: 'Pictures', icon: '🖼️' },
 	{ name: 'Music', icon: '🎵' },
@@ -199,17 +200,17 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 	const displayFolders = userFolders.filter((folder) => showHidden || !folder.isHidden);
 
 	return (
-		<div className="w-48 bg-gray-200 border-r border-gray-400 flex flex-col overflow-hidden cursor-default">
+		<div className="w-48 bg-stone-200 dark:bg-stone-800 border-r border-stone-400 dark:border-stone-700 flex flex-col overflow-hidden cursor-default dark:text-stone-100/90">
 			<div
 				data-tauri-drag-region
 				className={
 					!isFullscreen
-						? `h-[47px] w-48 left-0 top-0 fixed bg-gray-200/70 backdrop-blur-md border-r border-gray-400 ${showHeaderBorder ? 'border-b border-gray-400' : ''}`
+						? `h-[47px] w-48 left-0 top-0 fixed bg-stone-200/70 dark:bg-stone-800/70 backdrop-blur-md border-r border-stone-400 dark:border-stone-700 ${showHeaderBorder ? 'border-b border-stone-400 dark:border-stone-950' : ''}`
 						: ''
 				}></div>
 			<div ref={contentRef} className="flex-1 overflow-y-auto p-2 space-y-1 ">
 				<div className={isMacOS && !isFullscreen ? 'mb-4 mt-11' : 'mb-4'}>
-					<div className="px-2 mb-2 text-xs font-medium text-gray-500">Favorites</div>
+					<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">Favorites</div>
 					{displayFolders.map((folder) => (
 						<button
 							key={folder.path}
@@ -218,15 +219,15 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 								onNavigate(folder.path);
 							}}
 							onContextMenu={(e) => handleContextMenu(e, folder)}
-							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
-							<span className="text-gray-400">{folder.icon}</span>
+							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
+							<span className="text-stone-400">{folder.icon}</span>
 							<span>{folder.name}</span>
 						</button>
 					))}
 				</div>
 
 				<div className="mb-4">
-					<div className="px-2 mb-2 text-xs font-medium text-gray-500">Recents</div>
+					<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">Recents</div>
 					{recents.length > 0 ? (
 						recents.map((file) => (
 							<button
@@ -236,19 +237,19 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 									onNavigate(file.path);
 								}}
 								onContextMenu={() => {}}
-								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
-								<span className="text-gray-400">{file.icon}</span>
+								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
+								<span className="text-stone-400">{file.icon}</span>
 								<span>{file.name}</span>
 							</button>
 						))
 					) : (
-						<div className="px-2 py-1 text-xs text-gray-400">No recent files</div>
+						<div className="px-2 py-1 text-xs text-stone-400 dark:text-stone-400/70">No recent files</div>
 					)}
 				</div>
 
 				{drives.length > 0 && (
 					<div className="mb-4">
-						<div className="px-2 mb-2 text-xs font-medium text-gray-500">Drives</div>
+						<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">Drives</div>
 						{drives.map((drive) => (
 							<button
 								key={drive}
@@ -256,8 +257,8 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 									setShowTrash(false);
 									onNavigate(drive);
 								}}
-								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
-								<span className="text-gray-400">💾</span>
+								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
+								<span className="text-stone-400">💾</span>
 								<span>{drive}</span>
 							</button>
 						))}
@@ -266,15 +267,15 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 
 				{trashItemCount > 0 && (
 					<div>
-						<div className="px-2 mb-2 text-xs font-medium text-gray-500">System</div>
+						<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">System</div>
 						<button
 							onClick={() => setShowTrash(true)}
-							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-gray-100 flex items-center space-x-2">
-							<span className="text-gray-400">🗑️</span>
+							className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
+							<span className="text-stone-400">🗑️</span>
 							<span>
 								Trash
 								{trashItemCount > 0 && (
-									<span className="inline-flex items-center justify-center w-4 h-4 ms-2 text-xs font-semibold text-gray-800 bg-gray-300 rounded-full">
+									<span className="inline-flex items-center justify-center w-4 h-4 ms-2 text-xs font-semibold text-stone-800 bg-stone-300 dark:bg-stone-700/70 dark:text-stone-200 rounded-full">
 										{trashItemCount}
 									</span>
 								)}

@@ -245,11 +245,11 @@ export function FileList({
 
 	return (
 		<div className="h-screen flex flex-col">
-			<div className="sticky top-0 flex p-1.5 bg-gray-100 font-bold border-b border-gray-400 cursor-default">
-				<div className="w-8"></div>
+			<div className="sticky top-0 flex p-1.5 bg-stone-100 dark:bg-stone-800 font-bold border-b border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
+				<div className="w-11"></div>
 				<div className="flex-1">Name</div>
-				<div className="text-gray-700 mr-4 hidden md:block">Modified</div>
-				<div className="w-20 text-right">Size</div>
+				<div className="mr-4 hidden md:block">Modified</div>
+				<div className="w-20 text-right mr-4">Size</div>
 			</div>
 			<div
 				ref={fileListContainerRef}
@@ -262,7 +262,7 @@ export function FileList({
 				}}
 				style={{ overflowY: contextMenu.visible ? 'hidden' : 'auto' }}>
 				{creatingItem.type && (
-					<div className="flex items-center p-2 border-b border-gray-300 bg-blue-50">
+					<div className="flex items-center p-2 border-b border-stone-300 bg-blue-50">
 						<div className="mr-2 text-xl">{creatingItem.type === 'file' ? '📄' : '📁'}</div>
 						<div className="flex flex-1 items-center">
 							<input
@@ -276,18 +276,12 @@ export function FileList({
 									if (e.key === 'Escape') cancelNewItem();
 								}}
 							/>
-							<button onClick={saveNewItem} className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs">
-								Create
-							</button>
-							<button onClick={cancelNewItem} className="ml-2 px-2 py-1 bg-gray-500 text-white rounded text-xs">
-								Cancel
-							</button>
 						</div>
 					</div>
 				)}
 
 				{files.length === 0 && !creatingItem.type ? (
-					<div className="flex justify-center items-center h-40 text-gray-500">This folder is empty</div>
+					<div className="flex justify-center items-center h-40 text-stone-500">This folder is empty</div>
 				) : (
 					files.map((file) => (
 						<div

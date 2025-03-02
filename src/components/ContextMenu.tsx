@@ -88,7 +88,7 @@ export function ContextMenu({
 	}, [x, y]);
 
 	return (
-		<div ref={menuRef} className="fixed bg-white shadow-lg rounded border border-gray-200 z-50" style={{ minWidth: '180px' }}>
+		<div ref={menuRef} className="fixed bg-white shadow-lg rounded border border-stone-200 z-50" style={{ minWidth: '180px' }}>
 			<ul className="py-1">
 				{location === ContextMenuLocation.FILE_LIST && file && (
 					<>
@@ -100,7 +100,7 @@ export function ContextMenu({
 											restoreFromTrash(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-600">
+										className="w-full text-left px-4 py-2 hover:bg-stone-100 text-blue-600">
 										Restore
 									</button>
 								</li>
@@ -110,7 +110,7 @@ export function ContextMenu({
 											permanentlyDelete?.(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
+										className="w-full text-left px-4 py-2 hover:bg-stone-100 text-red-600">
 										Delete Permanently
 									</button>
 								</li>
@@ -123,7 +123,7 @@ export function ContextMenu({
 											onCopy(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+										className="w-full text-left px-4 py-2 hover:bg-stone-100 flex justify-between items-center">
 										Copy <KeybindBadge>{isMacOS ? '⌘C' : 'Ctrl+C'}</KeybindBadge>
 									</button>
 								</li>
@@ -133,17 +133,17 @@ export function ContextMenu({
 											onCut(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+										className="w-full text-left px-4 py-2 hover:bg-stone-100 flex justify-between items-center">
 										Cut <KeybindBadge>{isMacOS ? '⌘X' : 'Ctrl+X'}</KeybindBadge>
 									</button>
 								</li>
-								<li className="border-t border-gray-200">
+								<li className="border-t border-stone-200">
 									<button
 										onClick={() => {
 											onRename(file);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100">
+										className="w-full text-left px-4 py-2 hover:bg-stone-100">
 										Rename
 									</button>
 								</li>
@@ -153,7 +153,7 @@ export function ContextMenu({
 											onDelete(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex justify-between items-center">
+										className="w-full text-left px-4 py-2 hover:bg-stone-100 text-red-600 flex justify-between items-center">
 										<span>Move to Trash</span>
 										<KeybindBadge>{isMacOS ? '⌘⌫' : 'Delete'}</KeybindBadge>
 									</button>
@@ -170,7 +170,7 @@ export function ContextMenu({
 								onPinUnpinFolder(file.path, 'unpin');
 								onClose();
 							}}
-							className="w-full text-left px-4 py-2 hover:bg-gray-100">
+							className="w-full text-left px-4 py-2 hover:bg-stone-100">
 							Unpin from sidebar
 						</button>
 					</li>
@@ -178,13 +178,13 @@ export function ContextMenu({
 
 				{(location === ContextMenuLocation.FILE_LIST || location === ContextMenuLocation.EMPTY_SPACE) && !restoreFromTrash && (
 					<>
-						<li className={file && location === ContextMenuLocation.FILE_LIST ? 'border-t border-gray-200' : ''}>
+						<li className={file && location === ContextMenuLocation.FILE_LIST ? 'border-t border-stone-200' : ''}>
 							<button
 								onClick={() => {
 									onCreateFile();
 									onClose();
 								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+								className="w-full text-left px-4 py-2 hover:bg-stone-100 flex justify-between items-center">
 								New File <KeybindBadge>{isMacOS ? '⌘N' : 'Ctrl+N'}</KeybindBadge>
 							</button>
 						</li>
@@ -194,7 +194,7 @@ export function ContextMenu({
 									onCreateFolder();
 									onClose();
 								}}
-								className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+								className="w-full text-left px-4 py-2 hover:bg-stone-100 flex justify-between items-center">
 								New Folder <KeybindBadge>{isMacOS ? '⌘⇧N' : 'Ctrl+⇧+N'}</KeybindBadge>
 							</button>
 						</li>
@@ -202,13 +202,13 @@ export function ContextMenu({
 				)}
 
 				{location !== ContextMenuLocation.SIDEBAR && canPaste && !restoreFromTrash && (
-					<li className="border-t border-gray-200">
+					<li className="border-t border-stone-200">
 						<button
 							onClick={() => {
 								onPaste();
 								onClose();
 							}}
-							className="w-full text-left px-4 py-2 hover:bg-gray-100">
+							className="w-full text-left px-4 py-2 hover:bg-stone-100">
 							Paste <KeybindBadge>{isMacOS ? '⌘V' : 'Ctrl+V'}</KeybindBadge>
 						</button>
 					</li>
@@ -222,14 +222,14 @@ export function ContextMenu({
 								!canPaste &&
 								!(location === ContextMenuLocation.FILE_LIST || location === ContextMenuLocation.EMPTY_SPACE))
 								? ''
-								: 'border-t border-gray-200'
+								: 'border-t border-stone-200'
 						}>
 						<button
 							onClick={() => {
 								onToggleHidden();
 								onClose();
 							}}
-							className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center">
+							className="w-full text-left px-4 py-2 hover:bg-stone-100 flex justify-between items-center">
 							{showHidden ? 'Hide hidden files' : 'Show hidden files'} <KeybindBadge>{isMacOS ? '⌘+H' : 'Ctrl+H'}</KeybindBadge>
 						</button>
 					</li>

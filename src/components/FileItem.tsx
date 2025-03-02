@@ -85,11 +85,11 @@ export function FileItem({
 
 	return (
 		<div
-			className={`cursor-default flex items-center p-2 border-b border-gray-300 ${isSelected && 'bg-blue-100'}`}
+			className={`cursor-default flex items-center px-5 py-1 border-b border-stone-300 dark:border-stone-700/50 ${isSelected && 'bg-blue-100 dark:bg-[#0070FF]'}`}
 			onContextMenu={(e) => onContextMenu(e, file)}
 			onClick={() => onSelect(file)}
 			onDoubleClick={() => onOpen(file)}>
-			<div className="mr-2 text-xl">{getFileIcon()}</div>
+			<div className="mr-2">{getFileIcon()}</div>
 
 			{isRenaming ? (
 				<div className="flex flex-1 items-center">
@@ -97,25 +97,25 @@ export function FileItem({
 						type="text"
 						value={newName}
 						onChange={(e) => setNewName(e.target.value)}
-						className="flex-1 p-1 border border-gray-300 rounded"
+						className="flex-1 p-1 border border-stone-300 rounded"
 						autoFocus
 						onKeyDown={(e) => {
 							if (e.key === 'Enter') onSaveRename();
 							if (e.key === 'Escape') onCancelRename();
 						}}
 					/>
-					<button onClick={onSaveRename} className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs">
-						Save
-					</button>
-					<button onClick={onCancelRename} className="ml-2 px-2 py-1 bg-gray-500 text-white rounded text-xs">
-						Cancel
-					</button>
 				</div>
 			) : (
 				<>
-					<div className={`flex-1 ${file.is_hidden ? 'text-gray-400 italic' : ''}`}>{displayName()}</div>
-					<div className="text-gray-500 text-sm mr-4 hidden md:block">{file.modified}</div>
-					<div className="text-gray-500 text-sm w-20 text-right">{file.is_dir ? '--' : formatFileSize(file.size)}</div>
+					<div className={`flex-1 text-xs dark:text-stone-100 ${file.is_hidden ? 'text-stone-400 dark:text-stone-600 italic' : ''}`}>
+						{displayName()}
+					</div>
+					<div className={`text-stone-500 text-xs mr-4 hidden md:block ${isSelected ? 'dark:text-stone-50' : 'dark:text-stone-500'}`}>
+						{file.modified}
+					</div>
+					<div className={`text-stone-500 text-xs w-20 text-right ${isSelected ? 'dark:text-stone-50' : 'dark:text-stone-500'}`}>
+						{file.is_dir ? '--' : formatFileSize(file.size)}
+					</div>
 				</>
 			)}
 		</div>

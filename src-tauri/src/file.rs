@@ -221,9 +221,7 @@ pub fn create_file(path: &str, name: &str) -> Result<(), String> {
 }
 
 #[command]
-pub fn move_to_trash(path: &str) -> Result<(), String> {
-    trash::delete(path).map_err(|e| e.to_string())
-}
+pub fn move_to_trash(path: &str) -> Result<(), String> { trash::delete(path).map_err(|e| e.to_string()) }
 
 #[command]
 pub fn delete_item(path: &str) -> Result<(), String> {
@@ -288,10 +286,7 @@ pub fn get_drives() -> Result<Vec<String>, String> {
 
 #[cfg(not(target_os = "windows"))]
 #[command]
-pub fn get_drives() -> Result<Vec<String>, String> {
-    // improve and show all drives
-    Ok(vec!["/".to_string()])
-}
+pub fn get_drives() -> Result<Vec<String>, String> { Ok(vec!["/".to_string()]) }
 
 #[cfg(target_os = "macos")]
 #[command]
@@ -409,9 +404,7 @@ pub async fn restore_from_trash(path: &str) -> Result<(), String> {
 }
 
 #[cfg(target_os = "macos")]
-fn get_macos_trash_path() -> Option<std::path::PathBuf> {
-    dirs::home_dir().map(|home| home.join(".Trash"))
-}
+fn get_macos_trash_path() -> Option<std::path::PathBuf> { dirs::home_dir().map(|home| home.join(".Trash")) }
 
 #[cfg(not(target_os = "macos"))]
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {

@@ -16,6 +16,7 @@ function App() {
 		files,
 		isLoading,
 		error,
+		setError,
 		readDirectory,
 		navigateUp,
 		getHomeDirectory,
@@ -47,6 +48,16 @@ function App() {
 	useEffect(() => {
 		setIsMacOS(platform() === 'macos');
 	}, []);
+
+	useEffect(() => {
+		if (error) {
+			const timer = setTimeout(() => {
+				setError(null);
+			}, 3500);
+
+			return () => clearTimeout(timer);
+		}
+	}, [error]);
 
 	useEffect(() => {
 		const initializeApp = async () => {
@@ -97,8 +108,15 @@ function App() {
 	);
 
 	return (
-		<div className="flex flex-col h-screen bg-white">
-			{error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
+		<div className="flex flex-col h-screen bg-white dark:bg-stone-900">
+			{error && (
+				<div className="cursor-default z-100 absolute bottom-12 right-5 bg-red-100 text-red-700 px-4 py-2 rounded-md border border-red-200">
+					<span>{error}</span>
+					<button className="p-2" onClick={() => setError(null)}>
+						(close)
+					</button>
+				</div>
+			)}
 
 			<div className="flex flex-1 overflow-hidden">
 				<Sidebar
@@ -144,7 +162,19 @@ function App() {
 							/>
 						</>
 					) : (
-						<Trash onTrashUpdate={() => setTrashUpdateKey((prev) => prev + 1)} setShowTrash={setShowTrash} showHidden={showHidden} />
+						<>
+							<Navbar
+								data-tauri-drag-region
+								currentPath={'Trash'}
+								onBack={() => setShowTrash(false)}
+								onNavigateUp={() => {}}
+								canNavigateUp={false}
+								canGoBack={true}
+								canGoForward={false}
+							/>
+
+							<Trash onTrashUpdate={() => setTrashUpdateKey((prev) => prev + 1)} setShowTrash={setShowTrash} showHidden={showHidden} />
+						</>
 					)}
 				</div>
 			</div>
