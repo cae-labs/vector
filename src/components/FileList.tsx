@@ -8,7 +8,7 @@ import { FileItem } from '@/components/FileItem';
 import { ContextMenu } from '@/components/ContextMenu';
 import { StatusBar } from '@/components/StatusBar';
 import { FileEntry } from '@/hooks/useFileSystem';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Folder, FileText } from 'lucide-react';
 
 const storePromise = load('vector-settings.json', { autoSave: false });
 
@@ -722,20 +722,49 @@ export function FileList({
 				}}
 				style={{ overflowY: contextMenu.visible ? 'hidden' : 'auto' }}>
 				{creatingItem.type && (
-					<div className="flex items-center p-2 border-b border-stone-300 dark:border-stone-700 bg-blue-50 dark:bg-blue-900/20">
-						<div className="mr-2 text-xl">{creatingItem.type === 'file' ? '📄' : '📁'}</div>
+					<div
+						className={`cursor-default flex items-center border-b border-stone-300 dark:border-stone-700/50 bg-blue-100 dark:bg-[#0070FF]/20`}
+						style={{
+							padding: `${Math.max(2.5, Math.round(2.5 * zoomLevel))}px 1.25rem`
+						}}>
+						<div className="w-2"></div>
+
+						<div style={{ marginRight: `${zoomLevel / 2}rem` }}>
+							{creatingItem.type === 'folder' ? (
+								<Folder size={getScaledIconSize(18)} fill="#57CBFC" strokeWidth={0} />
+							) : (
+								<FileText size={getScaledIconSize(18)} fill="#F3F3F3" strokeWidth={0} />
+							)}
+						</div>
+
 						<div className="flex flex-1 items-center">
 							<input
 								type="text"
 								value={creatingItem.name}
 								onChange={(e) => setCreatingItem({ ...creatingItem, name: e.target.value })}
-								className="flex-1 p-1 border rounded dark:bg-stone-800 dark:border-stone-600 dark:text-stone-200"
+								className="px-1 bg-blue-100/80 border-0 rounded outline-none dark:bg-blue-900/40 dark:text-white ring-blue-400 ring-3 ring-inset"
+								style={{
+									fontSize: `${Math.max(0.75, 0.75 * zoomLevel)}rem`,
+									minWidth: `${creatingItem.name.length}ch`,
+									width: `${Math.max(creatingItem.name.length * 0.7, 10 * 0.7)}ch`,
+									maxWidth: 'calc(100% - 120px)'
+								}}
 								autoFocus
+								onBlur={saveNewItem}
+								onClick={(e) => e.stopPropagation()}
 								onKeyDown={(e) => {
 									if (e.key === 'Enter') saveNewItem();
 									if (e.key === 'Escape') cancelNewItem();
 								}}
 							/>
+						</div>
+
+						<div style={{ fontSize: `${Math.max(0.75, 0.75 * zoomLevel)}rem` }} className="text-stone-500 text-xs mr-4 hidden md:block">
+							--
+						</div>
+
+						<div style={{ fontSize: `${Math.max(0.75, 0.75 * zoomLevel)}rem` }} className="text-stone-500 text-xs w-20 text-right">
+							--
 						</div>
 					</div>
 				)}

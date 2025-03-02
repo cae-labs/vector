@@ -247,9 +247,11 @@ export function FileItem({
 			className={`cursor-default flex items-center border-b border-stone-300 dark:border-stone-700/50 ${isSelected ? 'bg-blue-100 dark:bg-[#0070FF]' : ''}`}
 			onContextMenu={(e) => onContextMenu(e, file)}
 			onClick={() => onSelect(file)}
-			onDoubleClick={() => handleAppLaunch(file)}
 			onMouseEnter={() => setIsHovering(true)}
 			onMouseLeave={() => setIsHovering(false)}
+			onDoubleClick={() => {
+				if (!isRenaming) handleAppLaunch(file);
+			}}
 			style={{
 				padding: `${paddingY}px 1.25rem`,
 				paddingLeft: `${depth * indentSize + 8}px`
@@ -277,9 +279,16 @@ export function FileItem({
 						type="text"
 						value={newName}
 						onChange={(e) => setNewName(e.target.value)}
-						className="flex-1 p-1 border border-stone-300 rounded dark:bg-stone-800 dark:border-stone-600 dark:text-stone-200"
-						style={{ fontSize }}
+						className="px-1 bg-blue-100/80 border-0 rounded outline-none dark:bg-blue-900/40 dark:text-white ring-blue-400 ring-3 ring-inset"
+						style={{
+							fontSize,
+							minWidth: `${displayName().length}ch`,
+							width: `${Math.max(newName.length * 0.7, displayName().length * 0.7)}ch`,
+							maxWidth: 'calc(100% - 120px)'
+						}}
 						autoFocus
+						onBlur={onSaveRename}
+						onClick={(e) => e.stopPropagation()}
 						onKeyDown={(e) => {
 							if (e.key === 'Enter') onSaveRename();
 							if (e.key === 'Escape') onCancelRename();
