@@ -87,9 +87,9 @@ function App() {
 		};
 	}, [toggleHiddenFiles]);
 
-	const handleOpenFile = async (file: FileEntry) => {
+	const handleOpenFile = async (file: FileEntry, open_app: boolean = false) => {
 		if (file.is_dir) {
-			if (isMacOS && file.name.endsWith('.app')) {
+			if (isMacOS && file.name.endsWith('.app') && !open_app) {
 				await openPath(file.path);
 			} else {
 				readDirectory(file.path);

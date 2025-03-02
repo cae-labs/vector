@@ -259,7 +259,7 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 								}}
 								className="w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
 								<span className="text-stone-400">💾</span>
-								<span>{drive}</span>
+								<span>{isMacOS && drive == '/' ? 'My Mac' : drive}</span>
 							</button>
 						))}
 					</div>
