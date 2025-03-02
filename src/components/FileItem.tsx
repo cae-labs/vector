@@ -285,7 +285,7 @@ export function FileItem({
 				<>
 					<div
 						style={{ fontSize }}
-						className={`flex-1 text-xs dark:text-stone-100 ${file.is_hidden ? 'text-stone-400 dark:text-stone-600 italic' : ''}`}>
+						className={`flex-1 truncate text-xs dark:text-stone-100 ${file.is_hidden ? 'text-stone-400 dark:text-stone-600 italic' : ''}`}>
 						{displayName()}
 					</div>
 					<div
