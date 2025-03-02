@@ -1,11 +1,23 @@
 import { useState, useEffect, useRef, MouseEvent } from 'react';
 import { ContextMenuLocation } from '@/types';
 import { platform } from '@tauri-apps/plugin-os';
+import { load } from '@tauri-apps/plugin-store';
 
 import { FileItem } from '@/components/FileItem';
 import { ContextMenu } from '@/components/ContextMenu';
 import { StatusBar } from '@/components/StatusBar';
 import { FileEntry } from '@/hooks/useFileSystem';
+
+const storePromise = load('file-explorer-preferences.json', { autoSave: false });
+
+export enum SortOption {
+	NAME_ASC = 'name_asc',
+	NAME_DESC = 'name_desc',
+	DATE_ASC = 'date_asc',
+	DATE_DESC = 'date_desc',
+	SIZE_ASC = 'size_asc',
+	SIZE_DESC = 'size_desc'
+}
 
 interface FileListProps {
 	files: FileEntry[];
@@ -48,6 +60,8 @@ export function FileList({
 	clearNewlyCreatedPath,
 	onNavigate
 }: FileListProps) {
+	const isLoadingPreference = useRef(false);
+
 	const [contextMenu, setContextMenu] = useState<{
 		visible: boolean;
 		x: number;
@@ -76,6 +90,118 @@ export function FileList({
 		type: 'file' | 'folder' | null;
 		name: string;
 	}>({ type: null, name: '' });
+
+	const [sortOption, setSortOption] = useState<SortOption>(SortOption.NAME_ASC);
+	const [storeInstance, setStoreInstance] = useState<any>(null);
+
+	useEffect(() => {
+		const initStore = async () => {
+			try {
+				const store = await storePromise;
+				setStoreInstance(store);
+			} catch (error) {
+				console.error('Failed to initialize store:', error);
+			}
+		};
+
+		initStore();
+	}, []);
+
+	useEffect(() => {
+		if (!storeInstance || !currentPath) return;
+
+		const loadPreference = async () => {
+			try {
+				isLoadingPreference.current = true;
+				console.log(`Loading preference for path: ${currentPath}`);
+				const preference = await storeInstance.get(`sort-${currentPath}`);
+				console.log(`Loaded preference: ${preference || 'none'}`);
+
+				if (preference) {
+					setSortOption(preference);
+				} else {
+					setSortOption(SortOption.NAME_ASC);
+				}
+				setTimeout(() => {
+					isLoadingPreference.current = false;
+				}, 100);
+			} catch (error) {
+				console.error('Failed to load preference:', error);
+				isLoadingPreference.current = false;
+			}
+		};
+
+		loadPreference();
+	}, [currentPath, storeInstance]);
+
+	useEffect(() => {
+		if (!storeInstance || !currentPath || isLoadingPreference.current) return;
+
+		const savePreference = async () => {
+			try {
+				await storeInstance.set(`sort-${currentPath}`, sortOption);
+				await storeInstance.save();
+			} catch (error) {
+				console.error('Failed to save preference:', error);
+			}
+		};
+
+		savePreference();
+	}, [sortOption, currentPath, storeInstance]);
+
+	const getSortedFiles = () => {
+		return [...files].sort((a, b) => {
+			switch (sortOption) {
+				case SortOption.NAME_ASC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return a.name.localeCompare(b.name);
+
+				case SortOption.NAME_DESC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return b.name.localeCompare(a.name);
+
+				case SortOption.DATE_ASC:
+					return new Date(a.modified).getTime() - new Date(b.modified).getTime();
+
+				case SortOption.DATE_DESC:
+					return new Date(b.modified).getTime() - new Date(a.modified).getTime();
+
+				case SortOption.SIZE_ASC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return a.size - b.size;
+
+				case SortOption.SIZE_DESC:
+					if (a.is_dir && !b.is_dir) return -1;
+					if (!a.is_dir && b.is_dir) return 1;
+					return b.size - a.size;
+
+				default:
+					return 0;
+			}
+		});
+	};
+
+	const handleSortChange = (option: SortOption) => {
+		setSortOption(option);
+	};
+
+	const getSortIndicator = (baseSortType: string) => {
+		if (sortOption.startsWith(baseSortType)) {
+			return sortOption.endsWith('_asc') ? ' ↑' : ' ↓';
+		}
+		return '';
+	};
+
+	const toggleSort = (baseSortType: string) => {
+		if (sortOption === `${baseSortType}_asc`) {
+			handleSortChange(`${baseSortType}_desc` as SortOption);
+		} else {
+			handleSortChange(`${baseSortType}_asc` as SortOption);
+		}
+	};
 
 	const handleFileContextMenu = (event: MouseEvent, file: FileEntry) => {
 		event.preventDefault();
@@ -269,13 +395,21 @@ export function FileList({
 		};
 	}, [contextMenu.visible]);
 
+	const sortedFiles = getSortedFiles();
+
 	return (
 		<div className="h-screen flex flex-col">
-			<div className="sticky top-0 flex p-1.5 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
+			<div className="sticky top-0 flex p-1 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b-[1px] border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
 				<div className="w-11"></div>
-				<div className="flex-1">Name</div>
-				<div className="mr-4 hidden md:block">Modified</div>
-				<div className="w-20 text-right mr-4">Size</div>
+				<div className="flex-1 py-1" onClick={() => toggleSort('name')}>
+					Name{getSortIndicator('name')}
+				</div>
+				<div className="mr-4 hidden md:block px-2 py-1" onClick={() => toggleSort('date')}>
+					Modified{getSortIndicator('date')}
+				</div>
+				<div className="w-20 text-right mr-4 px-2 py-1" onClick={() => toggleSort('size')}>
+					Size{getSortIndicator('size')}
+				</div>
 			</div>
 			<div
 				ref={fileListContainerRef}
@@ -306,10 +440,10 @@ export function FileList({
 					</div>
 				)}
 
-				{files.length === 0 && !creatingItem.type ? (
+				{sortedFiles.length === 0 && !creatingItem.type ? (
 					<div className="flex justify-center items-center h-40 text-stone-500">This folder is empty</div>
 				) : (
-					files.map((file) => (
+					sortedFiles.map((file) => (
 						<div
 							key={file.path}
 							ref={(el) => {
