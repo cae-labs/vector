@@ -7,8 +7,9 @@ import { FileItem } from '@/components/FileItem';
 import { ContextMenu } from '@/components/ContextMenu';
 import { StatusBar } from '@/components/StatusBar';
 import { FileEntry } from '@/hooks/useFileSystem';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
-const storePromise = load('file-explorer-preferences.json', { autoSave: false });
+const storePromise = load('vector-settings.json', { autoSave: false });
 
 export enum SortOption {
 	NAME_ASC = 'name_asc',
@@ -32,6 +33,7 @@ interface FileListProps {
 	onCreateDirectory: (name: string) => void;
 	canPaste: boolean;
 	showHidden: boolean;
+	refreshDirectory: () => void;
 	onToggleHidden: () => void;
 	restoreFromTrash?: (path: string) => void;
 	permanentlyDelete?: (path: string) => void;
@@ -57,6 +59,7 @@ export function FileList({
 	restoreFromTrash,
 	permanentlyDelete,
 	newlyCreatedPath,
+	refreshDirectory,
 	clearNewlyCreatedPath,
 	onNavigate
 }: FileListProps) {
@@ -113,9 +116,7 @@ export function FileList({
 		const loadPreference = async () => {
 			try {
 				isLoadingPreference.current = true;
-				console.log(`Loading preference for path: ${currentPath}`);
 				const preference = await storeInstance.get(`sort-${currentPath}`);
-				console.log(`Loaded preference: ${preference || 'none'}`);
 
 				if (preference) {
 					setSortOption(preference);
@@ -190,7 +191,11 @@ export function FileList({
 
 	const getSortIndicator = (baseSortType: string) => {
 		if (sortOption.startsWith(baseSortType)) {
-			return sortOption.endsWith('_asc') ? ' ↑' : ' ↓';
+			return sortOption.endsWith('_asc') ? (
+				<ChevronUp className="inline -mt-0.5 ml-1" size={14} />
+			) : (
+				<ChevronDown className="inline -mt-0.5 ml-1" size={14} />
+			);
 		}
 		return '';
 	};
@@ -482,6 +487,7 @@ export function FileList({
 						onCopy={onCopyFile}
 						onCut={onCutFile}
 						onPaste={onPasteFiles}
+						refreshDirectory={refreshDirectory}
 						onCreateFile={handleCreateFile}
 						onCreateFolder={handleCreateFolder}
 						canPaste={canPaste}

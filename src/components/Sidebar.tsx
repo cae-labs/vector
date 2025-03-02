@@ -6,6 +6,9 @@ import { FileEntry } from '@/hooks/useFileSystem';
 import { platform } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { load } from '@tauri-apps/plugin-store';
+
+const storePromise = load('vector-settings.json', { autoSave: false });
 
 import {
 	LucideIcon,
@@ -57,6 +60,10 @@ const COMMON_FOLDERS = [
 	{ name: 'Public', icon: Users }
 ];
 
+const DEFAULT_SIDEBAR_WIDTH = 192;
+const MIN_SIDEBAR_WIDTH = 160;
+const MAX_SIDEBAR_WIDTH = 400;
+
 export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, setShowTrash, trashUpdateKey, currentPath }: SidebarProps) {
 	const [isMacOS, setIsMacOS] = useState<boolean>(false);
 	const [isFullscreen, setFullScreen] = useState<boolean>(false);
@@ -64,6 +71,11 @@ export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, set
 
 	const [showHeaderBorder, setShowHeaderBorder] = useState<boolean>(false);
 	const contentRef = useRef<HTMLDivElement>(null);
+	const sidebarRef = useRef<HTMLDivElement>(null);
+
+	const [sidebarWidth, setSidebarWidth] = useState<number>(DEFAULT_SIDEBAR_WIDTH);
+	const [isResizing, setIsResizing] = useState<boolean>(false);
+	const storeRef = useRef<any>(null);
 
 	const [homeDir, setHomeDir] = useState<string>('');
 	const [userFolders, setUserFolders] = useState<UserFolder[]>([]);
@@ -81,6 +93,75 @@ export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, set
 		y: 0,
 		file: null
 	});
+
+	useEffect(() => {
+		const initStore = async () => {
+			try {
+				const store = await storePromise;
+				storeRef.current = store;
+
+				const savedWidth = await store.get<number>('sidebarWidth');
+				if (savedWidth && savedWidth >= MIN_SIDEBAR_WIDTH && savedWidth <= MAX_SIDEBAR_WIDTH) {
+					setSidebarWidth(savedWidth);
+				}
+			} catch (error) {
+				console.error('Failed to initialize store:', error);
+			}
+		};
+
+		initStore();
+	}, []);
+
+	useEffect(() => {
+		const saveWidth = async () => {
+			if (storeRef.current) {
+				await storeRef.current.set('sidebarWidth', sidebarWidth);
+				await storeRef.current.save();
+			}
+		};
+
+		const timeoutId = setTimeout(saveWidth, 100);
+		return () => clearTimeout(timeoutId);
+	}, [sidebarWidth]);
+
+	const handleResizeStart = (e: React.MouseEvent) => {
+		e.preventDefault();
+		setIsResizing(true);
+
+		const startX = e.clientX;
+		const startWidth = sidebarWidth;
+
+		const handleMouseMove = (e: MouseEvent) => {
+			const deltaX = e.clientX - startX;
+			let newWidth = startWidth + deltaX;
+			newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, newWidth));
+
+			if (sidebarRef.current) {
+				sidebarRef.current.style.width = `${newWidth}px`;
+			}
+
+			const headerElement = document.querySelector('[data-tauri-drag-region]');
+			if (headerElement) {
+				(headerElement as HTMLElement).style.width = `${newWidth}px`;
+			}
+
+			setSidebarWidth(newWidth);
+		};
+
+		const handleMouseUp = async () => {
+			setIsResizing(false);
+			document.removeEventListener('mousemove', handleMouseMove);
+			document.removeEventListener('mouseup', handleMouseUp);
+
+			if (storeRef.current) {
+				await storeRef.current.set('sidebarWidth', sidebarWidth);
+				await storeRef.current.save();
+			}
+		};
+
+		document.addEventListener('mousemove', handleMouseMove);
+		document.addEventListener('mouseup', handleMouseUp);
+	};
 
 	const handleContextMenu = (event: React.MouseEvent, folder: UserFolder) => {
 		event.preventDefault();
@@ -227,14 +308,17 @@ export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, set
 	const displayFolders = userFolders.filter((folder) => showHidden || !folder.isHidden);
 
 	return (
-		<div className="w-48 bg-stone-200 dark:bg-stone-800 border-r border-stone-400 dark:border-black/90 flex flex-col overflow-hidden cursor-default dark:text-stone-100/90">
+		<div
+			className="bg-stone-200 dark:bg-stone-800 border-r border-stone-400 dark:border-black/90 flex flex-col overflow-hidden cursor-default dark:text-stone-100/90 relative"
+			style={{ width: `${sidebarWidth}px` }}>
 			<div
 				data-tauri-drag-region
 				className={
 					!isFullscreen
-						? `h-[45px] w-48 left-0 top-0 fixed bg-stone-200/70 dark:bg-stone-800/70 backdrop-blur-md border-r border-stone-400 dark:border-black/90 ${showHeaderBorder ? 'border-b border-stone-400 dark:border-stone-950' : ''}`
+						? `h-[45px] left-0 top-0 fixed bg-stone-200/70 dark:bg-stone-800/70 backdrop-blur-md border-r border-stone-400 dark:border-black/90 ${showHeaderBorder ? 'border-b border-stone-400 dark:border-stone-950' : ''}`
 						: ''
-				}></div>
+				}
+				style={{ width: `${sidebarWidth}px` }}></div>
 			<div ref={contentRef} className="flex-1 overflow-y-auto p-2 space-y-1 ">
 				<div className={isMacOS && !isFullscreen ? 'mb-4 mt-11' : 'mb-4'}>
 					<div className="px-2 mb-2 text-xs font-medium text-stone-500 dark:text-stone-500/60">Favorites</div>
@@ -313,6 +397,11 @@ export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, set
 				)}
 			</div>
 
+			<div
+				className="absolute top-0 right-0 w-1 h-full cursor-ew-resize bg-transparent hover:bg-blue-500/30 active:bg-blue-500/50"
+				onMouseDown={handleResizeStart}
+			/>
+
 			{contextMenu.visible && (
 				<ContextMenu
 					x={contextMenu.x}
@@ -334,6 +423,8 @@ export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, set
 					onToggleHidden={onToggleHidden}
 				/>
 			)}
+
+			{isResizing && <div className="fixed inset-0 z-50 cursor-ew-resize" />}
 		</div>
 	);
 }

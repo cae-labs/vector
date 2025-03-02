@@ -58,10 +58,46 @@ export function FileItem({
 	onCancelRename
 }: FileItemProps) {
 	const [isMacOS, setIsMacOS] = useState(false);
+	const [relativeTime, setRelativeTime] = useState('');
 
 	useEffect(() => {
 		setIsMacOS(platform() === 'macos');
 	}, []);
+
+	useEffect(() => {
+		const updateRelativeTime = () => {
+			setRelativeTime(formatTimeString(new Date(file.modified)));
+		};
+
+		updateRelativeTime();
+
+		const intervalId = setInterval(updateRelativeTime, 60000);
+
+		return () => clearInterval(intervalId);
+	}, [file.modified]);
+
+	const formatTimeString = (date: Date): string => {
+		const now = new Date();
+		const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+
+		const hours = date.getHours();
+		const minutes = date.getMinutes();
+		const ampm = hours >= 12 ? 'PM' : 'AM';
+		const formattedHours = hours % 12 || 12;
+		const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+		const timeString = `${formattedHours}:${formattedMinutes} ${ampm}`;
+
+		if (isToday) {
+			return `Today at ${timeString}`;
+		} else {
+			const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+			const month = months[date.getMonth()];
+			const day = date.getDate();
+			const year = date.getFullYear();
+
+			return `${month} ${day}, ${year} at ${timeString}`;
+		}
+	};
 
 	const formatFileSize = (size: number): string => {
 		if (size < 1024) return `${size} B`;
@@ -174,7 +210,7 @@ export function FileItem({
 						{displayName()}
 					</div>
 					<div className={`text-stone-500 text-xs mr-4 hidden md:block ${isSelected ? 'dark:text-stone-50' : 'dark:text-stone-500'}`}>
-						{file.modified}
+						{relativeTime}
 					</div>
 					<div className={`text-stone-500 text-xs w-20 text-right ${isSelected ? 'dark:text-stone-50' : 'dark:text-stone-500'}`}>
 						{file.is_dir ? '--' : formatFileSize(file.size)}

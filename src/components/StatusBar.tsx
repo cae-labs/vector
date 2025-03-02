@@ -19,6 +19,17 @@ export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
 		getPlatform();
 	}, []);
 
+	const formatFileSize = (size: number): string => {
+		if (size < 1024) return `${size} B`;
+		if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+		if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+		return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+	};
+
+	const getTotalSize = (): number => {
+		return files.reduce((total, file) => total + file.size, 0);
+	};
+
 	const getRootName = () => {
 		if (!currentPlatform) return '/';
 		if (currentPlatform === 'macos') return 'My Mac';
@@ -27,6 +38,7 @@ export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
 	};
 
 	const pathSegments = currentPath !== 'internal:trash' ? currentPath.split('/').filter(Boolean) : [];
+	const totalSize = getTotalSize();
 
 	return (
 		<div className="mt-11 sticky bottom-0 cursor-default bg-stone-100 dark:bg-stone-800 px-2.5 py-1 border-t border-stone-300 dark:border-stone-700 text-[11px] text-stone-500 dark:text-stone-500/70 flex justify-between">
@@ -66,7 +78,10 @@ export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
 					</>
 				)}
 			</div>
-			<span className="text-stone-400 dark:text-stone-400/70">{files.length === 1 ? '1 item' : `${files.length} items`}</span>
+			<div className="flex items-center gap-2">
+				{totalSize > 0 && <span className="text-stone-400 dark:text-stone-400/70">{formatFileSize(totalSize)}</span>}
+				<span className="text-stone-400 dark:text-stone-400/70">{files.length === 1 ? '1 item' : `${files.length} items`}</span>
+			</div>
 		</div>
 	);
 }

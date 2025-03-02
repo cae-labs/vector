@@ -5,10 +5,15 @@ import { Sidebar } from '@/components/Sidebar';
 import { Navbar } from '@/components/Navbar';
 import { FileList } from '@/components/FileList';
 import { WarningBanner } from '@/components/Banner';
+
 import { useFileSystem, FileEntry } from '@/hooks/useFileSystem';
+import { useInterval } from '@/hooks/useInterval';
 
 import { openPath } from '@tauri-apps/plugin-opener';
 import { platform } from '@tauri-apps/plugin-os';
+import toast, { Toaster } from 'react-hot-toast';
+
+const AUTO_REFRESH_INTERVAL = 15000;
 
 function App() {
 	const {
@@ -38,7 +43,8 @@ function App() {
 		initDirectory,
 		loadDirectory,
 		newlyCreatedPath,
-		clearNewlyCreatedPath
+		clearNewlyCreatedPath,
+		refreshDirectory
 	} = useFileSystem();
 
 	const [isMacOS, setIsMacOS] = useState(false);
@@ -49,14 +55,14 @@ function App() {
 		setIsMacOS(platform() === 'macos');
 	}, []);
 
-	useEffect(() => {
-		if (error) {
-			const timer = setTimeout(() => {
-				setError(null);
-			}, 3500);
-
-			return () => clearTimeout(timer);
+	useInterval(() => {
+		if (!showTrash && currentPath) {
+			refreshDirectory();
 		}
+	}, AUTO_REFRESH_INTERVAL);
+
+	useEffect(() => {
+		if (error) toast.error(error, { duration: 3000, position: 'bottom-right' });
 	}, [error]);
 
 	useEffect(() => {
@@ -109,14 +115,7 @@ function App() {
 
 	return (
 		<div className="flex flex-col h-screen bg-white dark:bg-stone-900">
-			{error && (
-				<div className="cursor-default z-100 absolute bottom-12 right-5 bg-red-100 text-red-700 px-4 py-2 rounded-md border border-red-200">
-					<span>{error}</span>
-					<button className="p-2" onClick={() => setError(null)}>
-						(close)
-					</button>
-				</div>
-			)}
+			<Toaster />
 
 			<div className="flex flex-1 overflow-hidden">
 				<Sidebar
@@ -152,6 +151,7 @@ function App() {
 								onRenameFile={renameItem}
 								onCopyFile={copyItem}
 								onCutFile={cutItem}
+								refreshDirectory={refreshDirectory}
 								onNavigate={readDirectory}
 								onPasteFiles={pasteItems}
 								onCreateFile={createFile}

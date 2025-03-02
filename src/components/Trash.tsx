@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { FileEntry } from '@/hooks/useFileSystem';
+import { useInterval } from '@/hooks/useInterval';
 import { TrashList } from '@/components/TrashList';
 import { invoke } from '@tauri-apps/api/core';
 
 interface TrashProps {
 	showHidden: boolean;
 	onTrashUpdate?: () => void;
+	refreshDirectory: () => void;
 	setShowTrash: (show: boolean) => void;
 }
 
-export function Trash({ showHidden, onTrashUpdate, setShowTrash }: TrashProps) {
+export function Trash({ showHidden, onTrashUpdate, setShowTrash, refreshDirectory }: TrashProps) {
 	const [items, setItems] = useState<FileEntry[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	const AUTO_REFRESH_INTERVAL = 30000;
 
 	const loadTrashItems = async () => {
 		try {
@@ -62,6 +66,10 @@ export function Trash({ showHidden, onTrashUpdate, setShowTrash }: TrashProps) {
 		}
 	};
 
+	useInterval(() => {
+		loadTrashItems();
+	}, AUTO_REFRESH_INTERVAL);
+
 	useEffect(() => {
 		loadTrashItems();
 	}, []);
@@ -80,6 +88,7 @@ export function Trash({ showHidden, onTrashUpdate, setShowTrash }: TrashProps) {
 			restoreFromTrash={handleRestore}
 			permanentlyDelete={handlePermanentDelete}
 			showHidden={showHidden}
+			refreshDirectory={refreshDirectory}
 			onToggleHidden={() => {}}
 		/>
 	);

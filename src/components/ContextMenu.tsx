@@ -16,6 +16,7 @@ interface ContextMenuProps {
 	onRename: (file: FileEntry) => void;
 	onCopy: (path: string) => void;
 	onCut: (path: string) => void;
+	refreshDirectory: () => void;
 	onPaste: () => void;
 	onCreateFile: () => void;
 	onCreateFolder: () => void;
@@ -42,6 +43,7 @@ export function ContextMenu({
 	onCreateFile,
 	onCreateFolder,
 	onPinUnpinFolder,
+	refreshDirectory,
 	canPaste,
 	showHidden,
 	onToggleHidden,
@@ -278,6 +280,17 @@ export function ContextMenu({
 							className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
 							{showHidden ? 'Hide Hidden Files' : 'Show Hidden Files'} <KeybindBadge>{isMacOS ? '⌘ H' : 'Ctrl+H'}</KeybindBadge>
 						</button>
+
+						<li>
+							<button
+								onClick={() => {
+									refreshDirectory();
+									onClose();
+								}}
+								className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
+								Refresh
+							</button>
+						</li>
 					</li>
 				)}
 			</ul>

@@ -12,9 +12,10 @@ interface TrashListProps {
 	permanentlyDelete: (path: string) => void;
 	showHidden: boolean;
 	onToggleHidden: () => void;
+	refreshDirectory: () => void;
 }
 
-export function TrashList({ files, restoreFromTrash, permanentlyDelete, showHidden, onToggleHidden }: TrashListProps) {
+export function TrashList({ files, restoreFromTrash, permanentlyDelete, showHidden, onToggleHidden, refreshDirectory }: TrashListProps) {
 	const [contextMenu, setContextMenu] = useState<{
 		visible: boolean;
 		x: number;
@@ -117,6 +118,7 @@ export function TrashList({ files, restoreFromTrash, permanentlyDelete, showHidd
 						onCreateFile={() => {}}
 						onCreateFolder={() => {}}
 						canPaste={false}
+						refreshDirectory={refreshDirectory}
 						showHidden={showHidden}
 						onToggleHidden={onToggleHidden}
 						restoreFromTrash={restoreFromTrash}

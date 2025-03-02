@@ -240,6 +240,23 @@ export function useFileSystem() {
 		}
 	}, [currentPath, loadDirectory]);
 
+	const refreshDirectory = useCallback(async () => {
+		if (!currentPath) return;
+
+		try {
+			const entries = await invoke<FileEntry[]>('read_directory', {
+				path: currentPath,
+				showHidden
+			});
+
+			setFiles(entries);
+
+			await checkIfOutsideHomeDir(currentPath);
+		} catch (err) {
+			console.error('Auto-refresh error:', err);
+		}
+	}, [currentPath, showHidden, checkIfOutsideHomeDir]);
+
 	return {
 		currentPath,
 		files,
@@ -267,6 +284,7 @@ export function useFileSystem() {
 		initDirectory,
 		loadDirectory,
 		newlyCreatedPath,
+		refreshDirectory,
 		clearNewlyCreatedPath: () => setNewlyCreatedPath(null)
 	};
 }
