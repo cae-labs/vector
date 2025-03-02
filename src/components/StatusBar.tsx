@@ -32,12 +32,14 @@ export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
 		<div className="mt-11 sticky bottom-0 cursor-default bg-stone-100 dark:bg-stone-800 px-2.5 py-1 border-t border-stone-300 dark:border-stone-700 text-[11px] text-stone-500 dark:text-stone-500/70 flex justify-between">
 			<div className="flex items-center">
 				{currentPath === 'internal:trash' ? (
-					<span className="text-[11px] text-stone-500 dark:text-stone-500/70">Trash</span>
+					<span className="text-[11px] text-stone-500 dark:text-stone-400/70">Trash</span>
 				) : (
 					<>
 						{pathSegments.length > 0 ? (
 							<>
-								<span className="hover:text-stone-700 dark:hover:text-stone-400 cursor-pointer" onClick={() => onNavigate('/')}>
+								<span
+									className="text-stone-400 dark:text-stone-400/70 hover:text-stone-700 dark:hover:text-stone-400 cursor-pointer"
+									onClick={() => onNavigate('/')}>
 									{getRootName()}
 								</span>
 								{pathSegments.map((segment, index) => {
@@ -47,7 +49,9 @@ export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
 											<span className="mx-0.5">
 												<ChevronRight className="inline" size={10} />
 											</span>
-											<span className="hover:text-stone-700 dark:hover:text-stone-400 cursor-pointer" onClick={() => onNavigate(pathToSegment)}>
+											<span
+												className="text-stone-400 dark:text-stone-400/70 hover:text-stone-700 dark:hover:text-stone-400 cursor-pointer"
+												onClick={() => onNavigate(pathToSegment)}>
 												{segment}
 											</span>
 										</span>
@@ -62,7 +66,7 @@ export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
 					</>
 				)}
 			</div>
-			<span>{files.length === 1 ? '1 item' : `${files.length} items`}</span>
+			<span className="text-stone-400 dark:text-stone-400/70">{files.length === 1 ? '1 item' : `${files.length} items`}</span>
 		</div>
 	);
 }

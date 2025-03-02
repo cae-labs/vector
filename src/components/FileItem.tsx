@@ -85,7 +85,7 @@ export function FileItem({
 
 	return (
 		<div
-			className={`cursor-default flex items-center px-5 py-1 border-b border-stone-300 dark:border-stone-700/50 ${isSelected && 'bg-blue-100 dark:bg-[#0070FF]'}`}
+			className={`cursor-default flex items-center px-5 py-0.5 border-b border-stone-300 dark:border-stone-700/50 ${isSelected && 'bg-blue-100 dark:bg-[#0070FF]'}`}
 			onContextMenu={(e) => onContextMenu(e, file)}
 			onClick={() => onSelect(file)}
 			onDoubleClick={() => onOpen(file)}>

@@ -123,6 +123,7 @@ function App() {
 					onNavigate={readDirectory}
 					showHidden={showHidden}
 					onToggleHidden={toggleHiddenFiles}
+					showTrash={showTrash}
 					setShowTrash={setShowTrash}
 					trashUpdateKey={trashUpdateKey}
 					currentPath={currentPath}
@@ -156,7 +157,6 @@ function App() {
 								onCreateFile={createFile}
 								onCreateDirectory={createDirectory}
 								canPaste={canPaste}
-								isLoading={isLoading}
 								showHidden={showHidden}
 								onToggleHidden={toggleHiddenFiles}
 								newlyCreatedPath={newlyCreatedPath}

@@ -19,7 +19,6 @@ interface FileListProps {
 	onCreateFile: (name: string) => void;
 	onCreateDirectory: (name: string) => void;
 	canPaste: boolean;
-	isLoading: boolean;
 	showHidden: boolean;
 	onToggleHidden: () => void;
 	restoreFromTrash?: (path: string) => void;
@@ -41,7 +40,6 @@ export function FileList({
 	onCreateFile,
 	onCreateDirectory,
 	canPaste,
-	isLoading,
 	showHidden,
 	onToggleHidden,
 	restoreFromTrash,
@@ -157,8 +155,18 @@ export function FileList({
 	}, []);
 
 	useEffect(() => {
+		setSelectedFile(null);
+		setSelectedItem(null);
+	}, [currentPath]);
+
+	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			const cmdOrCtrl = isMacOS ? event.metaKey : event.ctrlKey;
+
+			if (event.key === 'Escape') {
+				setSelectedFile(null);
+				setSelectedItem(null);
+			}
 
 			if (selectedItem) {
 				if ((isMacOS && cmdOrCtrl && event.key === 'Backspace') || (!isMacOS && event.key === 'Delete')) {
@@ -263,7 +271,7 @@ export function FileList({
 
 	return (
 		<div className="h-screen flex flex-col">
-			<div className="sticky top-0 flex p-1.5 bg-stone-100 dark:bg-stone-800 font-bold border-b border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
+			<div className="sticky top-0 flex p-1.5 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
 				<div className="w-11"></div>
 				<div className="flex-1">Name</div>
 				<div className="mr-4 hidden md:block">Modified</div>

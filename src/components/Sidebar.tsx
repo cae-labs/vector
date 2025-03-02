@@ -29,6 +29,7 @@ import {
 interface SidebarProps {
 	onNavigate: (path: string) => void;
 	showHidden: boolean;
+	showTrash: boolean;
 	onToggleHidden: () => void;
 	setShowTrash: (set: boolean) => void;
 	trashUpdateKey: number;
@@ -56,7 +57,7 @@ const COMMON_FOLDERS = [
 	{ name: 'Public', icon: Users }
 ];
 
-export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, trashUpdateKey, currentPath }: SidebarProps) {
+export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, setShowTrash, trashUpdateKey, currentPath }: SidebarProps) {
 	const [isMacOS, setIsMacOS] = useState<boolean>(false);
 	const [isFullscreen, setFullScreen] = useState<boolean>(false);
 	const [trashItemCount, setTrashItemCount] = useState<number>(0);
@@ -226,12 +227,12 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 	const displayFolders = userFolders.filter((folder) => showHidden || !folder.isHidden);
 
 	return (
-		<div className="w-48 bg-stone-200 dark:bg-stone-800 border-r border-stone-400 dark:border-stone-700 flex flex-col overflow-hidden cursor-default dark:text-stone-100/90">
+		<div className="w-48 bg-stone-200 dark:bg-stone-800 border-r border-stone-400 dark:border-black/90 flex flex-col overflow-hidden cursor-default dark:text-stone-100/90">
 			<div
 				data-tauri-drag-region
 				className={
 					!isFullscreen
-						? `h-[47px] w-48 left-0 top-0 fixed bg-stone-200/70 dark:bg-stone-800/70 backdrop-blur-md border-r border-stone-400 dark:border-stone-700 ${showHeaderBorder ? 'border-b border-stone-400 dark:border-stone-950' : ''}`
+						? `h-[45px] w-48 left-0 top-0 fixed bg-stone-200/70 dark:bg-stone-800/70 backdrop-blur-md border-r border-stone-400 dark:border-black/90 ${showHeaderBorder ? 'border-b border-stone-400 dark:border-stone-950' : ''}`
 						: ''
 				}></div>
 			<div ref={contentRef} className="flex-1 overflow-y-auto p-2 space-y-1 ">
@@ -240,12 +241,9 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 					{displayFolders.map((folder) => (
 						<button
 							key={folder.path}
-							onClick={() => {
-								setShowTrash(false);
-								onNavigate(folder.path);
-							}}
+							onClick={() => onNavigate(folder.path).then(() => setShowTrash(false))}
 							onContextMenu={(e) => handleContextMenu(e, folder)}
-							className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${folder.path == currentPath ? 'bg-stone-300 dark:bg-stone-700/50' : 'hover:bg-stone-300 dark:hover:bg-stone-700/50'}`}>
+							className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${folder.path == currentPath && !showTrash ? 'bg-stone-300 dark:bg-stone-700/50' : ''}`}>
 							<span className="text-blue-500 dark:text-blue-400">
 								<folder.icon size={16} />
 							</span>
@@ -260,12 +258,9 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 						recents.map((file) => (
 							<button
 								key={file.path}
-								onClick={() => {
-									setShowTrash(false);
-									onNavigate(file.path);
-								}}
+								onClick={() => onNavigate(file.path).then(() => setShowTrash(false))}
 								onContextMenu={() => {}}
-								className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${file.path == currentPath ? 'bg-stone-300 dark:bg-stone-700/50' : 'hover:bg-stone-300 dark:hover:bg-stone-700/50'}`}>
+								className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${file.path == currentPath && !showTrash ? 'bg-stone-300 dark:bg-stone-700/50' : ''}`}>
 								<span className="text-stone-500 dark:text-stone-400">
 									<file.icon size={16} />
 								</span>
@@ -283,11 +278,8 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 						{drives.map((drive) => (
 							<button
 								key={drive}
-								onClick={() => {
-									setShowTrash(false);
-									onNavigate(drive);
-								}}
-								className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${drive == currentPath ? 'bg-stone-300 dark:bg-stone-700/50' : 'hover:bg-stone-300 dark:hover:bg-stone-700/50'}`}>
+								onClick={() => onNavigate(drive).then(() => setShowTrash(false))}
+								className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${drive == currentPath && !showTrash ? 'bg-stone-300 dark:bg-stone-700/50' : ''}`}>
 								<span className="text-stone-500 dark:text-stone-400">
 									<HardDrive size={16} />
 								</span>
@@ -299,7 +291,7 @@ export function Sidebar({ onNavigate, showHidden, onToggleHidden, setShowTrash, 
 							<div>
 								<button
 									onClick={() => setShowTrash(true)}
-									className="mt-0.5 w-full text-left px-2 py-1 rounded text-sm hover:bg-stone-100 dark:hover:bg-stone-700/50 flex items-center space-x-2">
+									className={`mt-0.5 w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${showTrash && 'bg-stone-100 dark:bg-stone-700/50'}`}>
 									<span className="text-stone-500 dark:text-stone-400">
 										<Trash2 size={16} />
 									</span>
