@@ -1,0 +1,3 @@
+jump to select file or folder on creation
+
+make macos default sound on cut/paste/copy

@@ -144,88 +144,89 @@ export function FileList({
 	}
 
 	return (
-		<div
-			className="flex-1 overflow-auto relative"
-			onContextMenu={handleBackgroundContextMenu}
-			onClick={(e) => {
-				if (e.target === e.currentTarget) {
-					setSelectedItem(null);
-				}
-			}}>
+		<>
 			<div className="sticky top-0 flex p-2 bg-gray-200 font-bold border-b cursor-default">
 				<div className="w-8"></div>
 				<div className="flex-1">Name</div>
 				<div className="text-gray-700 mr-4 hidden md:block">Modified</div>
 				<div className="w-20 text-right">Size</div>
 			</div>
-
-			{creatingItem.type && (
-				<div className="flex items-center p-2 border-b bg-blue-50">
-					<div className="mr-2 text-xl">{creatingItem.type === 'file' ? '📄' : '📁'}</div>
-					<div className="flex flex-1 items-center">
-						<input
-							type="text"
-							value={creatingItem.name}
-							onChange={(e) => setCreatingItem({ ...creatingItem, name: e.target.value })}
-							className="flex-1 p-1 border rounded"
-							autoFocus
-							onKeyDown={(e) => {
-								if (e.key === 'Enter') saveNewItem();
-								if (e.key === 'Escape') cancelNewItem();
-							}}
-						/>
-						<button onClick={saveNewItem} className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs">
-							Create
-						</button>
-						<button onClick={cancelNewItem} className="ml-2 px-2 py-1 bg-gray-500 text-white rounded text-xs">
-							Cancel
-						</button>
+			<div
+				className="flex-1 overflow-auto relative"
+				onContextMenu={handleBackgroundContextMenu}
+				onClick={(e) => {
+					if (e.target === e.currentTarget) {
+						setSelectedItem(null);
+					}
+				}}>
+				{creatingItem.type && (
+					<div className="flex items-center p-2 border-b bg-blue-50">
+						<div className="mr-2 text-xl">{creatingItem.type === 'file' ? '📄' : '📁'}</div>
+						<div className="flex flex-1 items-center">
+							<input
+								type="text"
+								value={creatingItem.name}
+								onChange={(e) => setCreatingItem({ ...creatingItem, name: e.target.value })}
+								className="flex-1 p-1 border rounded"
+								autoFocus
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') saveNewItem();
+									if (e.key === 'Escape') cancelNewItem();
+								}}
+							/>
+							<button onClick={saveNewItem} className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs">
+								Create
+							</button>
+							<button onClick={cancelNewItem} className="ml-2 px-2 py-1 bg-gray-500 text-white rounded text-xs">
+								Cancel
+							</button>
+						</div>
 					</div>
-				</div>
-			)}
+				)}
 
-			{files.length === 0 && !creatingItem.type ? (
-				<div className="flex justify-center items-center h-40 text-gray-500">This folder is empty</div>
-			) : (
-				files.map((file) => (
-					<FileItem
-						key={file.path}
-						file={file}
-						onOpen={handleOpenItem}
-						onSelect={handleSelectItem}
+				{files.length === 0 && !creatingItem.type ? (
+					<div className="flex justify-center items-center h-40 text-gray-500">This folder is empty</div>
+				) : (
+					files.map((file) => (
+						<FileItem
+							key={file.path}
+							file={file}
+							onOpen={handleOpenItem}
+							onSelect={handleSelectItem}
+							onDelete={onDeleteFile}
+							onRename={startRenaming}
+							onContextMenu={handleFileContextMenu}
+							isRenaming={renamingFile === file.path}
+							isSelected={selectedItem === file.path}
+							newName={newFileName}
+							setNewName={setNewFileName}
+							onSaveRename={saveRename}
+							onCancelRename={cancelRename}
+						/>
+					))
+				)}
+
+				{contextMenu.visible && (
+					<ContextMenu
+						x={contextMenu.x}
+						y={contextMenu.y}
+						file={contextMenu.file}
+						location={contextMenu.location}
+						onClose={closeContextMenu}
+						onOpen={onOpenFile}
 						onDelete={onDeleteFile}
 						onRename={startRenaming}
-						onContextMenu={handleFileContextMenu}
-						isRenaming={renamingFile === file.path}
-						isSelected={selectedItem === file.path}
-						newName={newFileName}
-						setNewName={setNewFileName}
-						onSaveRename={saveRename}
-						onCancelRename={cancelRename}
+						onCopy={onCopyFile}
+						onCut={onCutFile}
+						onPaste={onPasteFiles}
+						onCreateFile={handleCreateFile}
+						onCreateFolder={handleCreateFolder}
+						canPaste={canPaste}
+						showHidden={showHidden}
+						onToggleHidden={onToggleHidden}
 					/>
-				))
-			)}
-
-			{contextMenu.visible && (
-				<ContextMenu
-					x={contextMenu.x}
-					y={contextMenu.y}
-					file={contextMenu.file}
-					location={contextMenu.location}
-					onClose={closeContextMenu}
-					onOpen={onOpenFile}
-					onDelete={onDeleteFile}
-					onRename={startRenaming}
-					onCopy={onCopyFile}
-					onCut={onCutFile}
-					onPaste={onPasteFiles}
-					onCreateFile={handleCreateFile}
-					onCreateFolder={handleCreateFolder}
-					canPaste={canPaste}
-					showHidden={showHidden}
-					onToggleHidden={onToggleHidden}
-				/>
-			)}
-		</div>
+				)}
+			</div>
+		</>
 	);
 }

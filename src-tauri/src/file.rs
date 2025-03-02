@@ -148,7 +148,9 @@ pub fn create_file(path: &str, name: &str) -> Result<(), String> {
 }
 
 #[command]
-pub fn move_to_trash(path: &str) -> Result<(), String> { trash::delete(path).map_err(|e| e.to_string()) }
+pub fn move_to_trash(path: &str) -> Result<(), String> {
+    trash::delete(path).map_err(|e| e.to_string())
+}
 
 #[command]
 pub fn rename_item(path: &str, new_name: &str) -> Result<String, String> {
@@ -317,7 +319,9 @@ pub async fn restore_from_trash(path: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn get_macos_trash_path() -> Option<std::path::PathBuf> { dirs::home_dir().map(|home| home.join(".Trash")) }
+fn get_macos_trash_path() -> Option<std::path::PathBuf> {
+    dirs::home_dir().map(|home| home.join(".Trash"))
+}
 
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     fs::create_dir_all(dst)?;
