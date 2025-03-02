@@ -102,24 +102,24 @@ export function ContextMenu({
 					<>
 						{restoreFromTrash ? (
 							<>
-								<li className="relative mx-1.5 pt-0.5 pb-1.5">
+								<li className="relative mx-1 pb-1.5">
 									<div className="absolute bottom-0 left-1.5 right-1.5 h-px bg-stone-300 dark:bg-stone-400/40"></div>
 									<button
 										onClick={() => {
 											restoreFromTrash(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
+										className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
 										Restore
 									</button>
 								</li>
-								<li className="mx-1.5 pt-1.5 pb-0.5">
+								<li className="mx-1 pt-1">
 									<button
 										onClick={() => {
 											permanentlyDelete?.(file.path);
 											onClose();
 										}}
-										className="w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
+										className="py-0.5 group w-full text-left px-2 rounded hover:text-white hover:bg-[#0070FF] dark:hover:bg-[#0070FF]/90 dark:text-stone-200 flex justify-between items-center">
 										Delete Permanently
 									</button>
 								</li>
@@ -218,7 +218,7 @@ export function ContextMenu({
 				)}
 
 				{location === ContextMenuLocation.SIDEBAR && file && onPinUnpinFolder && (
-					<li className="mx-1 pb-1.5">
+					<li className="mx-1 pb-[0.28rem]">
 						<button
 							onClick={() => {
 								onPinUnpinFolder(file.path, 'unpin');
@@ -232,7 +232,7 @@ export function ContextMenu({
 
 				{(location === ContextMenuLocation.FILE_LIST || location === ContextMenuLocation.EMPTY_SPACE) && !restoreFromTrash && (
 					<>
-						<li className={file && location === ContextMenuLocation.FILE_LIST ? 'pt-1.5 mx-1 relative' : 'py-0.5 mx-1'}>
+						<li className={file && location === ContextMenuLocation.FILE_LIST ? 'pt-1.5 mx-1 relative' : 'mx-1'}>
 							{file && location === ContextMenuLocation.FILE_LIST && (
 								<div className="absolute top-0 left-1.5 right-1.5 h-px bg-stone-300 dark:bg-stone-400/40"></div>
 							)}

@@ -242,8 +242,11 @@ export function Sidebar({ onNavigate, showHidden, showTrash, onToggleHidden, set
 						<button
 							key={folder.path}
 							onClick={() => onNavigate(folder.path).then(() => setShowTrash(false))}
-							onContextMenu={(e) => handleContextMenu(e, folder)}
-							className={`w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${folder.path == currentPath && !showTrash ? 'bg-stone-300 dark:bg-stone-700/50' : ''}`}>
+							onContextMenu={(e) => {
+								e.currentTarget.focus();
+								handleContextMenu(e, folder);
+							}}
+							className={`focus:ring focus:ring-blue-500 w-full text-left px-2 py-1 rounded text-sm flex items-center space-x-2 ${folder.path == currentPath && !showTrash ? 'bg-stone-300 dark:bg-stone-700/50' : ''}`}>
 							<span className="text-blue-500 dark:text-blue-400">
 								<folder.icon size={16} />
 							</span>

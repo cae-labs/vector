@@ -2,6 +2,32 @@ import { useState, useEffect, MouseEvent } from 'react';
 import { FileEntry } from '@/hooks/useFileSystem';
 import { platform } from '@tauri-apps/plugin-os';
 
+import {
+	Folder,
+	FolderGit2,
+	File,
+	FileText,
+	FileJson,
+	FileCode2,
+	FilePenLine,
+	FolderArchive,
+	FileAudio,
+	FileVideo,
+	FileChartColumn,
+	FileChartPie,
+	FileImage,
+	FileCog,
+	FileType,
+	FileDigit,
+	ImagePlay,
+	FileSearch,
+	FileBadge,
+	FileTerminal,
+	FileLock2,
+	FileDiff,
+	LucideIcon
+} from 'lucide-react';
+
 interface FileItemProps {
 	file: FileEntry;
 	onOpen: (file: FileEntry) => void;
@@ -51,45 +77,70 @@ export function FileItem({
 		return file.name;
 	};
 
-	const getFileIcon = () => {
-		if (file.is_dir) return '📁';
+	const FileIcon = () => {
+		if (file.name == '.git') return <FolderGit2 size={18} fill="#57CBFC" stroke="#AEE6FE" strokeWidth={1.5} />;
+		if (file.is_dir) return <Folder size={18} fill="#57CBFC" strokeWidth={0} />;
 
-		const iconMap: Record<string, string> = {
-			pdf: '📄',
-			doc: '📝',
-			docx: '📝',
-			xls: '📊',
-			xlsx: '📊',
-			ppt: '📊',
-			pptx: '📊',
-			jpg: '🖼️',
-			jpeg: '🖼️',
-			png: '🖼️',
-			gif: '🖼️',
-			mp3: '🎵',
-			mp4: '🎬',
-			zip: '🗜️',
-			rar: '🗜️',
-			txt: '📝',
-			json: '📋',
-			js: '📜',
-			jsx: '📜',
-			ts: '📜',
-			tsx: '📜',
-			css: '🎨',
-			html: '🌐'
+		if (file.name == '.DS_Store') return <FileSearch size={18} fill="#222222" stroke="#C8C8C8" strokeWidth={1.5} />;
+
+		const iconMap: Record<string, LucideIcon> = {
+			pdf: <FileType size={18} fill="#F3F3F3" stroke="#000" strokeWidth={1.5} />,
+			pages: <FileText size={18} fill="#FFB202" stroke="#FFE2B0" strokeWidth={1.5} />,
+			doc: <FileText size={18} fill="#0086E4" stroke="#CDE8FF" strokeWidth={1.5} />,
+			docx: <FileText size={18} fill="#0086E4" stroke="#CDE8FF" strokeWidth={1.5} />,
+			numbers: <FileChartColumn size={18} fill="#00D402" stroke="#E5FFE6" strokeWidth={1.5} />,
+			xls: <FileChartColumn size={18} fill="#00D402" stroke="#E5FFE6" strokeWidth={1.5} />,
+			xlsx: <FileChartColumn size={18} fill="#00D402" stroke="#E5FFE6" strokeWidth={1.5} />,
+			key: <FileChartPie size={18} fill="#FF7802" stroke="#FFDEC1" strokeWidth={1.5} />,
+			ppt: <FileChartPie size={18} fill="#FF7802" stroke="#FFDEC1" strokeWidth={1.5} />,
+			pptx: <FileChartPie size={18} fill="#FF7802" stroke="#FFDEC1" strokeWidth={1.5} />,
+			jpg: <FileImage size={18} fill="#2A65CE" stroke="#C4D5F3" strokeWidth={1.5} />,
+			jpeg: <FileImage size={18} fill="#2A65CE" stroke="#C4D5F3" strokeWidth={1.5} />,
+			png: <FileImage size={18} fill="#2A65CE" stroke="#C4D5F3" strokeWidth={1.5} />,
+			webp: <FileImage size={18} fill="#2A65CE" stroke="#C4D5F3" strokeWidth={1.5} />,
+			gif: <ImagePlay size={18} fill="#FE2B99" stroke="#FFB6A1" strokeWidth={1.5} />,
+			mp3: <FileAudio size={18} fill="#D55C77" stroke="#FFB6A1" strokeWidth={1.5} />,
+			mp4: <FileVideo size={18} fill="#7D00E8" stroke="#B2ADFB" strokeWidth={1.5} />,
+			zip: <FolderArchive size={18} fill="#F3F3F3" stroke="#000" strokeWidth={1.5} />,
+			rar: <FolderArchive size={18} fill="#F3F3F3" stroke="#000" strokeWidth={1.5} />,
+			txt: <FileText size={18} fill="#F3F3F3" stroke="#000" strokeWidth={1.5} />,
+			json: <FileJson size={18} fill="#FFA400" stroke="#FFE2B0" strokeWidth={1.5} />,
+			js: <FileCode2 size={18} fill="#FFA500" stroke="#FFE2B0" strokeWidth={1.5} />,
+			jsx: <FileCode2 size={18} fill="#FFA500" stroke="#FFE2B0" strokeWidth={1.5} />,
+			ts: <FileCode2 size={18} fill="#0086E4" stroke="#CDE8FF" strokeWidth={1.5} />,
+			tsx: <FileCode2 size={18} fill="#0086E4" stroke="#CDE8FF" strokeWidth={1.5} />,
+			rs: <FileCode2 size={18} fill="#A52045" stroke="#EFBCC7" strokeWidth={1.5} />,
+			lo: <FileCode2 size={18} fill="#A52045" stroke="#EFBCC7" strokeWidth={1.5} />,
+			css: <FilePenLine size={18} fill="#FFAC00" stroke="#FFE2B0" strokeWidth={1.5} />,
+			html: <FileCode2 size={18} fill="#00D402" stroke="#E5FFE6" strokeWidth={1.5} />,
+			yml: <FileCog size={18} fill="#019C28" stroke="#D6FFE0" strokeWidth={1.5} />,
+			yaml: <FileCog size={18} fill="#019C28" stroke="#D6FFE0" strokeWidth={1.5} />,
+			toml: <FileCog size={18} fill="#DD484B" stroke="#F8DBDC" strokeWidth={1.5} />,
+			bin: <FileDigit size={18} fill="#000" stroke="#F3F3F3" strokeWidth={1.5} />,
+			cert: <FileBadge size={18} fill="#AE591E" stroke="#E8CE7D" strokeWidth={1.5} />,
+			sh: <FileTerminal size={18} fill="#0E3B0A" stroke="#A2EE9B" strokeWidth={1.5} />,
+			zsh: <FileTerminal size={18} fill="#0E3B0A" stroke="#A2EE9B" strokeWidth={1.5} />,
+			tish: <FileTerminal size={18} fill="#0E3B0A" stroke="#A2EE9B" strokeWidth={1.5} />,
+			lock: <FileLock2 size={18} fill="#000" stroke="#FFF" strokeWidth={1.5} />,
+			diff: <FileDiff size={18} fill="#000" stroke="#FFF" strokeWidth={1.5} />,
+			patch: <FileDiff size={18} fill="#000" stroke="#FFF" strokeWidth={1.5} />
 		};
 
-		return iconMap[file.file_type.toLowerCase()] || '📄';
+		return iconMap[file.file_type.toLowerCase()] || <File size={18} fill="#F3F3F3" strokeWidth={0} />;
 	};
 
 	return (
 		<div
-			className={`cursor-default flex items-center px-5 py-0.5 border-b border-stone-300 dark:border-stone-700/50 ${isSelected && 'bg-blue-100 dark:bg-[#0070FF]'}`}
-			onContextMenu={(e) => onContextMenu(e, file)}
+			className={`focus:ring focus:ring-blue-500 cursor-default flex items-center px-5 py-[2.5px] border-b border-stone-300 dark:border-stone-700/50 ${isSelected && 'bg-blue-100 dark:bg-[#0070FF]'}`}
+			onContextMenu={(e) => {
+				e.currentTarget.focus();
+				onContextMenu(e, file);
+			}}
 			onClick={() => onSelect(file)}
 			onDoubleClick={() => onOpen(file)}>
-			<div className="mr-2">{getFileIcon()}</div>
+			<div className="mr-2">
+				<FileIcon />
+			</div>
 
 			{isRenaming ? (
 				<div className="flex flex-1 items-center">

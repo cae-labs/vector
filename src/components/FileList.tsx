@@ -279,7 +279,7 @@ export function FileList({
 			</div>
 			<div
 				ref={fileListContainerRef}
-				className="flex-1 overflow-auto relative"
+				className="flex-1 overflow-auto relative pb-2"
 				onContextMenu={handleBackgroundContextMenu}
 				onClick={(e) => {
 					if (e.target === e.currentTarget) {
