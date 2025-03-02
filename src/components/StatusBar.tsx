@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { FileEntry } from '@/hooks/useFileSystem';
 import { platform } from '@tauri-apps/plugin-os';
 import { ChevronRight } from 'lucide-react';
 
@@ -6,9 +7,11 @@ interface StatusBarProps {
 	files: FileEntry[];
 	currentPath: string;
 	onNavigate: (path: string) => void;
+	selectedCount?: number;
+	selectedSize?: number;
 }
 
-export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
+export function StatusBar({ files, currentPath, onNavigate, selectedCount = 0, selectedSize = 0 }: StatusBarProps) {
 	const [currentPlatform, setPlatform] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -79,8 +82,17 @@ export function StatusBar({ files, currentPath, onNavigate }: StatusBarProps) {
 				)}
 			</div>
 			<div className="flex items-center gap-2">
-				{totalSize > 0 && <span className="text-stone-400 dark:text-stone-400/70">{formatFileSize(totalSize)}</span>}
-				<span className="text-stone-400 dark:text-stone-400/70">{files.length === 1 ? '1 item' : `${files.length} items`}</span>
+				{selectedCount > 0 ? (
+					<>
+						<span className="text-blue-500 dark:text-blue-400">{selectedCount === 1 ? '1 item selected' : `${selectedCount} items selected`}</span>
+						{selectedSize > 0 && <span className="text-blue-500 dark:text-blue-400">{formatFileSize(selectedSize)}</span>}
+					</>
+				) : (
+					<>
+						{totalSize > 0 && <span className="text-stone-400 dark:text-stone-400/70">{formatFileSize(totalSize)}</span>}
+						<span className="text-stone-400 dark:text-stone-400/70">{files.length === 1 ? '1 item' : `${files.length} items`}</span>
+					</>
+				)}
 			</div>
 		</div>
 	);

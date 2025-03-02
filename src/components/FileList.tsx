@@ -93,8 +93,9 @@ export function FileList({
 	const [renamingFile, setRenamingFile] = useState<string | null>(null);
 	const [newFileName, setNewFileName] = useState<string>('');
 
-	const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
-	const [selectedItem, setSelectedItem] = useState<string | null>(null);
+	const [selectedFiles, setSelectedFiles] = useState<FileEntry[]>([]);
+	const [selectedItems, setSelectedItems] = useState<string[]>([]);
+	const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
 
 	const [creatingItem, setCreatingItem] = useState<{
 		type: 'file' | 'folder' | null;
@@ -260,6 +261,68 @@ export function FileList({
 		}
 	}, [files, showHidden]);
 
+	const handleSelectItem = (file: FileEntry, event: MouseEvent) => {
+		const index = sortedFiles.findIndex((f) => f.path === file.path);
+
+		if (event.shiftKey && lastSelectedIndex !== null) {
+			const startIdx = Math.min(lastSelectedIndex, index);
+			const endIdx = Math.max(lastSelectedIndex, index);
+			const filesToSelect = sortedFiles.slice(startIdx, endIdx + 1);
+
+			setSelectedFiles((prevSelected) => {
+				const newSelection = [...prevSelected];
+				filesToSelect.forEach((file) => {
+					if (!newSelection.some((f) => f.path === file.path)) {
+						newSelection.push(file);
+					}
+				});
+				return newSelection;
+			});
+
+			setSelectedItems((prevSelected) => {
+				const newSelection = [...prevSelected];
+				filesToSelect.forEach((file) => {
+					if (!newSelection.includes(file.path)) {
+						newSelection.push(file.path);
+					}
+				});
+				return newSelection;
+			});
+		} else if (isMacOS ? event.metaKey : event.ctrlKey) {
+			if (selectedItems.includes(file.path)) {
+				setSelectedFiles(selectedFiles.filter((f) => f.path !== file.path));
+				setSelectedItems(selectedItems.filter((path) => path !== file.path));
+			} else {
+				setSelectedFiles([...selectedFiles, file]);
+				setSelectedItems([...selectedItems, file.path]);
+			}
+		} else {
+			setSelectedFiles([file]);
+			setSelectedItems([file.path]);
+		}
+
+		setLastSelectedIndex(index);
+	};
+
+	const handleFileContextMenu = (event: MouseEvent, file: FileEntry) => {
+		event.preventDefault();
+		event.stopPropagation();
+
+		if (!selectedItems.includes(file.path)) {
+			setSelectedFiles([file]);
+			setSelectedItems([file.path]);
+		}
+
+		setContextMenu({
+			visible: true,
+			x: event.clientX,
+			y: event.clientY,
+			file: file,
+			location: ContextMenuLocation.FILE_LIST,
+			selectionCount: selectedItems.length
+		});
+	};
+
 	const getSortedFiles = () => {
 		return [...files].sort((a, b) => {
 			switch (sortOption) {
@@ -349,6 +412,40 @@ export function FileList({
 		setZoomLevel(1.05);
 	};
 
+	const handleDeleteFiles = () => {
+		selectedItems.forEach((path) => onDeleteFile(path));
+	};
+
+	const handleCopyFiles = () => {
+		selectedItems.forEach((path) => onCopyFile(path));
+	};
+
+	const handleCutFiles = () => {
+		selectedItems.forEach((path) => onCutFile(path));
+	};
+
+	const handleBackgroundClick = (e: MouseEvent) => {
+		if (e.target === e.currentTarget) {
+			setSelectedFiles([]);
+			setSelectedItems([]);
+			setLastSelectedIndex(null);
+		}
+	};
+
+	const handleCreateFile = () => {
+		setSelectedFiles([]);
+		setSelectedItems([]);
+		setLastSelectedIndex(null);
+		setCreatingItem({ type: 'file', name: 'New File.txt' });
+	};
+
+	const handleCreateFolder = () => {
+		setSelectedFiles([]);
+		setSelectedItems([]);
+		setLastSelectedIndex(null);
+		setCreatingItem({ type: 'folder', name: 'New Folder' });
+	};
+
 	const getSortIndicator = (baseSortType: string) => {
 		if (sortOption.startsWith(baseSortType)) {
 			return sortOption.endsWith('_asc') ? (
@@ -368,20 +465,6 @@ export function FileList({
 		}
 	};
 
-	const handleFileContextMenu = (event: MouseEvent, file: FileEntry) => {
-		event.preventDefault();
-		event.stopPropagation();
-		setSelectedItem(file.path);
-		setSelectedFile(file);
-		setContextMenu({
-			visible: true,
-			x: event.clientX,
-			y: event.clientY,
-			file: file,
-			location: ContextMenuLocation.FILE_LIST
-		});
-	};
-
 	const handleBackgroundContextMenu = (event: MouseEvent) => {
 		event.preventDefault();
 		setContextMenu({
@@ -398,8 +481,10 @@ export function FileList({
 	};
 
 	const startRenaming = (file: FileEntry) => {
-		setRenamingFile(file.path);
-		setNewFileName(file.name);
+		if (selectedItems.length === 1) {
+			setRenamingFile(file.path);
+			setNewFileName(file.name);
+		}
 	};
 
 	const saveRename = () => {
@@ -411,14 +496,6 @@ export function FileList({
 
 	const cancelRename = () => {
 		setRenamingFile(null);
-	};
-
-	const handleCreateFile = () => {
-		setCreatingItem({ type: 'file', name: 'New File.txt' });
-	};
-
-	const handleCreateFolder = () => {
-		setCreatingItem({ type: 'folder', name: 'New Folder' });
 	};
 
 	const saveNewItem = () => {
@@ -435,11 +512,6 @@ export function FileList({
 
 	const cancelNewItem = () => {
 		setCreatingItem({ type: null, name: '' });
-	};
-
-	const handleSelectItem = (file: FileEntry) => {
-		setSelectedFile(file);
-		setSelectedItem(file.path);
 	};
 
 	const handleToggleExpand = async (file: FileEntry) => {
@@ -478,126 +550,18 @@ export function FileList({
 	}, []);
 
 	useEffect(() => {
-		setSelectedFile(null);
-		setSelectedItem(null);
+		setSelectedFiles([]);
+		setSelectedItems([]);
+		setLastSelectedIndex(null);
 	}, [currentPath]);
-
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			const cmdOrCtrl = isMacOS ? event.metaKey : event.ctrlKey;
-
-			if (event.key === 'Escape') {
-				setSelectedFile(null);
-				setSelectedItem(null);
-			}
-
-			if (selectedItem && selectedFile) {
-				if ((isMacOS && cmdOrCtrl && event.key === 'Backspace') || (!isMacOS && event.key === 'Delete')) {
-					event.preventDefault();
-					onDeleteFile(selectedItem);
-				}
-
-				if (event.key === 'ArrowRight' && selectedFile.is_dir) {
-					if (!expandedFolders[selectedItem]) {
-						event.preventDefault();
-						handleToggleExpand(selectedFile);
-					}
-				}
-
-				if (event.key === 'ArrowLeft' && selectedFile.is_dir) {
-					if (expandedFolders[selectedItem]) {
-						event.preventDefault();
-						handleToggleExpand(selectedFile);
-					}
-				}
-			}
-
-			if (cmdOrCtrl) {
-				switch (event.key.toLowerCase()) {
-					case 'o':
-						if (selectedFile) {
-							if (event.shiftKey) {
-								event.preventDefault();
-								onOpenFile(selectedFile);
-							} else {
-								event.preventDefault();
-								onOpenFile(selectedFile);
-							}
-						}
-						break;
-
-					case 'c':
-						if (selectedItem) {
-							event.preventDefault();
-							onCopyFile(selectedItem);
-						}
-						break;
-
-					case 'x':
-						if (selectedItem) {
-							event.preventDefault();
-							onCutFile(selectedItem);
-						}
-						break;
-
-					case 'v':
-						if (canPaste) {
-							event.preventDefault();
-							onPasteFiles();
-						}
-						break;
-
-					case 'r':
-						if (selectedFile) {
-							event.preventDefault();
-							startRenaming(selectedFile);
-						}
-						break;
-
-					case 'n':
-						if (event.shiftKey) {
-							event.preventDefault();
-							handleCreateFolder();
-						} else {
-							event.preventDefault();
-							handleCreateFile();
-						}
-						break;
-
-					case '=':
-						if (cmdOrCtrl) {
-							event.preventDefault();
-							increaseZoom();
-						}
-						break;
-
-					case '-':
-						if (cmdOrCtrl) {
-							event.preventDefault();
-							decreaseZoom();
-						}
-						break;
-
-					case '0':
-						if (cmdOrCtrl) {
-							event.preventDefault();
-							resetZoom();
-						}
-						break;
-				}
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [selectedItem, selectedFile, files, canPaste, isMacOS, expandedFolders]);
 
 	useEffect(() => {
 		if (newlyCreatedPath && files.length > 0) {
 			const fileToSelect = files.find((file) => file.path === newlyCreatedPath);
 			if (fileToSelect) {
-				setSelectedItem(fileToSelect.path);
-				setSelectedFile(fileToSelect);
+				setSelectedFiles([fileToSelect]);
+				setSelectedItems([fileToSelect.path]);
+				setLastSelectedIndex(files.findIndex((file) => file.path === fileToSelect.path));
 
 				setTimeout(() => {
 					const fileElement = fileItemRefs.current.get(fileToSelect.path);
@@ -641,6 +605,7 @@ export function FileList({
 			const isExpanded = file.is_dir && expandedFolders[file.path];
 			const isExpandable = file.is_dir && !(isMacOS && file.name.endsWith('.app'));
 			const isAlternate = rowIndex % 2 === 1;
+			const isSelected = selectedItems.includes(file.path);
 
 			const fileElement = (
 				<div
@@ -652,12 +617,12 @@ export function FileList({
 					<FileItem
 						file={file}
 						onOpen={onOpenFile}
-						onSelect={handleSelectItem}
+						onSelect={(file) => handleSelectItem(file, window.event as MouseEvent)}
 						onDelete={onDeleteFile}
 						onRename={startRenaming}
 						onContextMenu={handleFileContextMenu}
 						isRenaming={renamingFile === file.path}
-						isSelected={selectedItem === file.path}
+						isSelected={isSelected}
 						newName={newFileName}
 						setNewName={setNewFileName}
 						onSaveRename={saveRename}
@@ -697,6 +662,121 @@ export function FileList({
 
 	const getScaledIconSize = (baseSize: number) => Math.round(baseSize * zoomLevel);
 
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			const cmdOrCtrl = isMacOS ? event.metaKey : event.ctrlKey;
+
+			if (event.key === 'Escape') {
+				setSelectedFiles([]);
+				setSelectedItems([]);
+				setLastSelectedIndex(null);
+			}
+
+			if (selectedItems.length > 0) {
+				if ((isMacOS && cmdOrCtrl && event.key === 'Backspace') || (!isMacOS && event.key === 'Delete')) {
+					event.preventDefault();
+					handleDeleteFiles();
+				}
+
+				if (selectedItems.length === 1 && selectedFiles.length === 1) {
+					const selectedFile = selectedFiles[0];
+					if (event.key === 'ArrowRight' && selectedFile.is_dir) {
+						if (!expandedFolders[selectedItems[0]]) {
+							event.preventDefault();
+							handleToggleExpand(selectedFile);
+						}
+					}
+
+					if (event.key === 'ArrowLeft' && selectedFile.is_dir) {
+						if (expandedFolders[selectedItems[0]]) {
+							event.preventDefault();
+							handleToggleExpand(selectedFile);
+						}
+					}
+				}
+			}
+
+			if (cmdOrCtrl) {
+				switch (event.key.toLowerCase()) {
+					case 'o':
+						if (selectedFiles.length === 1) {
+							event.preventDefault();
+							onOpenFile(selectedFiles[0]);
+						}
+						break;
+
+					case 'c':
+						if (selectedItems.length > 0) {
+							event.preventDefault();
+							handleCopyFiles();
+						}
+						break;
+
+					case 'x':
+						if (selectedItems.length > 0) {
+							event.preventDefault();
+							handleCutFiles();
+						}
+						break;
+
+					case 'v':
+						if (canPaste) {
+							event.preventDefault();
+							onPasteFiles();
+						}
+						break;
+
+					case 'r':
+						if (selectedFiles.length === 1) {
+							event.preventDefault();
+							startRenaming(selectedFiles[0]);
+						}
+						break;
+
+					case 'a':
+						event.preventDefault();
+						setSelectedFiles([...sortedFiles]);
+						setSelectedItems(sortedFiles.map((file) => file.path));
+						break;
+
+					case 'n':
+						if (event.shiftKey) {
+							event.preventDefault();
+							handleCreateFolder();
+						} else {
+							event.preventDefault();
+							handleCreateFile();
+						}
+						break;
+
+					case '=':
+						if (cmdOrCtrl) {
+							event.preventDefault();
+							increaseZoom();
+						}
+						break;
+
+					case '-':
+						if (cmdOrCtrl) {
+							event.preventDefault();
+							decreaseZoom();
+						}
+						break;
+
+					case '0':
+						if (cmdOrCtrl) {
+							event.preventDefault();
+							resetZoom();
+						}
+						break;
+				}
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [selectedItems, selectedFiles, files, canPaste, isMacOS, expandedFolders, sortedFiles]);
+
 	return (
 		<div className="h-screen flex flex-col">
 			<div className="sticky top-0 flex p-1 mb-0.5 bg-stone-100 dark:bg-stone-800 font-bold border-b-[1px] border-stone-400 dark:border-stone-700 cursor-default text-stone-700 dark:text-stone-400 text-xs">
@@ -717,8 +797,9 @@ export function FileList({
 				onContextMenu={handleBackgroundContextMenu}
 				onClick={(e) => {
 					if (e.target === e.currentTarget) {
-						setSelectedItem(null);
-						setSelectedFile(null);
+						setSelectedFiles([]);
+						setSelectedItems([]);
+						setLastSelectedIndex(null);
 					}
 				}}
 				style={{ overflowY: contextMenu.visible ? 'hidden' : 'auto' }}>
@@ -786,10 +867,10 @@ export function FileList({
 						location={contextMenu.location}
 						onClose={closeContextMenu}
 						onOpen={onOpenFile}
-						onDelete={onDeleteFile}
+						onDelete={selectedItems.length > 1 ? handleDeleteFiles : onDeleteFile}
 						onRename={startRenaming}
-						onCopy={onCopyFile}
-						onCut={onCutFile}
+						onCopy={selectedItems.length > 1 ? handleCopyFiles : onCopyFile}
+						onCut={selectedItems.length > 1 ? handleCutFiles : onCutFile}
 						onPaste={onPasteFiles}
 						refreshDirectory={refreshDirectory}
 						onCreateFile={handleCreateFile}
@@ -799,11 +880,18 @@ export function FileList({
 						onToggleHidden={onToggleHidden}
 						restoreFromTrash={restoreFromTrash}
 						permanentlyDelete={permanentlyDelete}
+						selectionCount={selectedItems.length}
 					/>
 				)}
 			</div>
 
-			<StatusBar files={files} currentPath={currentPath} onNavigate={onNavigate} />
+			<StatusBar
+				files={files}
+				currentPath={currentPath}
+				onNavigate={onNavigate}
+				selectedCount={selectedItems.length}
+				selectedSize={selectedFiles.reduce((total, file) => total + file.size, 0)}
+			/>
 		</div>
 	);
 }
